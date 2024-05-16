@@ -121,7 +121,7 @@ public class MemConnect {
         // TODO
         // 不存在时抛出异常
         for (ClassTableItem item : getClassTableList()){
-            if (item.classname == tableName){
+            if (item.classname.equals(tableName)){
                 return item.classid;
             }
         }
@@ -139,7 +139,7 @@ public class MemConnect {
         // 不存在时抛出异常
         ArrayList<String> attrList =  new ArrayList<String>();
         for (ClassTableItem item : getClassTableList()){
-            if (item.classname == tableName){
+            if (item.classname.equals(tableName)){
                 attrList.add(item.attrname);
             }
         }
@@ -158,7 +158,7 @@ public class MemConnect {
         // TODO
         // 不存在时抛出异常
         for (ClassTableItem item : getClassTableList()){
-            if (item.classname == tableName){
+            if (item.classname.equals(tableName)){
                 return item.attrnum;
             }
         }
@@ -224,7 +224,7 @@ public class MemConnect {
         // TODO
         // 不存在时抛出异常
         for (ClassTableItem item : getClassTableList()) {
-            if (item.classid == classId && item.attrname == attrName)
+            if (item.classid == classId && item.attrname.equals(attrName))
                 return item.attrid;
         }
         // 此处异常有可能是因为表不存在引起的，也有可能是属性名不存在引起的
@@ -285,7 +285,7 @@ public class MemConnect {
     public boolean classExist(String tableName) {
         // TODO
         for (ClassTableItem item : getClassTableList()) {
-            if (item.classname == tableName)
+            if (item.classname.equals(tableName))
                 return true;
         }
         return false;
@@ -300,7 +300,7 @@ public class MemConnect {
     public boolean columnExist(String tableName, String columnName) throws TMDBException {
         // TODO
         for (ClassTableItem item : getClassTableList()) {
-            if (item.classname == tableName && item.attrname == columnName)
+            if (item.classname.equals(tableName) && item.attrname.equals(columnName))
                 return true;
         }
         return false;
