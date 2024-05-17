@@ -3,9 +3,11 @@ package edu.whu.tmdb.util;
 import edu.whu.tmdb.query.operations.utils.MemConnect;
 import edu.whu.tmdb.query.operations.utils.SelectResult;
 import edu.whu.tmdb.storage.memory.SystemTable.BiPointerTableItem;
+import edu.whu.tmdb.storage.memory.SystemTable.ClassTable;
 import edu.whu.tmdb.storage.memory.SystemTable.ClassTableItem;
 import edu.whu.tmdb.storage.memory.SystemTable.DeputyTableItem;
 import edu.whu.tmdb.storage.memory.SystemTable.SwitchingTableItem;
+import edu.whu.tmdb.storage.memory.MemManager;
 import edu.whu.tmdb.storage.memory.Tuple;
 
 import java.io.File;
@@ -76,19 +78,55 @@ public class DbOperation {
         }
     }
 
-    public static void showBiPointerTable() {
-        // TODO-task2
-    }
 
     public static void showClassTable() {
-        // TODO-task2
+        List<ClassTableItem> classTableLists = MemManager.classTable.classTableList;
+
+        // 打印表头
+        System.out.printf("| %-20s | %-8s | %-20s | %-8s | %-14s |\n", "class name", "class id", "attribute name", "attribute id", "attribute type");
+        // 遍历每个 ClassTableItem 实例，每个实例代表一个属性
+        for (ClassTableItem item : classTableLists) {
+            System.out.printf("| %-20s | %-8d | %-20s | %-12d | %-14s |\n", item.classname, item.classid, item.attrname, item.attrid, item.attrtype);
+        }
     }
 
     public static void showDeputyTable() {
-        // TODO-task2
+        List<DeputyTableItem> deputyTableLists = MemManager.deputyTable.deputyTableList;
+        // Print table header
+        System.out.printf("| %-20s | %-20s |\n", "origin class id", "deputy class id");
+
+        // Iterate over each item in the list and print formatted output
+        for (DeputyTableItem item : deputyTableLists) {
+            System.out.printf("| %-20s | %-20s |\n",item.originid,item.deputyid);
+        }
     }
 
-    public static void showSwitchingTable() {
+
+    public static void showBiPointerTable() {
         // TODO-task2
+        List<BiPointerTableItem> biPointerTableLists = MemManager.biPointerTable.biPointerTableList;
+        // Print table header
+        System.out.printf("| %-20s | %-14s | %-12s | %-16s |\n","class id", "object id","deputy id","deputy object id");
+
+        // Iterate over each item in the list and print formatted output
+        for (BiPointerTableItem item : biPointerTableLists) {
+            System.out.printf("| %-20s | %-14s | %-12s | %-16s |\n",item.classid,item.objectid,item.deputyid,item.deputyobjectid);
+        }
+    }
+
+
+
+
+    public static void showSwitchingTable() {
+        List<SwitchingTableItem> switchingTableLists = MemManager.switchingTable.switchingTableList; // Assumed access to a list of switching table items
+
+        // Print table header
+        System.out.printf("| %-20s | %-11s | %-16s | %-14s | %-14s | %-17s |\n","origin class id", "origin attribute id", "origin attribute name", "deputy class id", "deputy attribute id", "deputy attribute name");
+
+        // Iterate over each item in the list and print formatted output
+        for (SwitchingTableItem item : switchingTableLists) {
+            System.out.printf("| %-20s | %-11s | %-16s | %-14s | %-14s | %-17s |\n",item.oriId,item.oriAttrid,item.oriAttr,item.deputyId,item.deputyAttrId,item.deputyAttr);
+        }
     }
 }
+
