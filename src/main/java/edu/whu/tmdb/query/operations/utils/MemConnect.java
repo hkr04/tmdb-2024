@@ -3,8 +3,8 @@ package edu.whu.tmdb.query.operations.utils;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.HashMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -118,14 +118,14 @@ public class MemConnect {
      * @throws TMDBException 不存在给定表名的表，抛出异常
      */
     public int getClassId(String tableName) throws TMDBException {
-        // TODO
-        // 不存在时抛出异常
-        for (ClassTableItem item : getClassTableList()){
-            if (item.classname.equals(tableName)){
-                return item.classid;
+        for (ClassTableItem item : getClassTableList()) {
+            if (item.classname.equals(tableName)) {
+                return item.classid; // 找到匹配的表名，返回对应的类ID
             }
         }
-        throw new TMDBException(ErrorList.CLASS_NAME_DOES_NOT_EXIST, tableName);
+        // 如果遍历完成后没有找到匹配的表名，抛出(-1): tjoin deputy class 需要的，而非直接报错
+        //throw new TMDBException(ErrorList.CLASS_NAME_DOES_NOT_EXIST, "No class found with the name: " + tableName);
+        return -1;
     }
 
     /**
@@ -135,34 +135,54 @@ public class MemConnect {
      * @throws TMDBException 不存在给定表名的表，抛出异常
      */
     public List<String> getColumns(String tableName) throws TMDBException {
-        // TODO
-        // 不存在时抛出异常
-        ArrayList<String> attrList =  new ArrayList<String>();
-        for (ClassTableItem item : getClassTableList()){
-            if (item.classname.equals(tableName)){
-                attrList.add(item.attrname);
+        List<String> attributes = new ArrayList<>();
+        for (ClassTableItem i : getClassTableList()) {
+            if (i.classname.equals(tableName)) {
+                attributes.add(i.attrname);
             }
         }
-        if (attrList.isEmpty())
-            throw new TMDBException(ErrorList.CLASS_NAME_DOES_NOT_EXIST, tableName);
-        return attrList;
+        if (attributes.isEmpty())
+            // Assuming each ClassTableItem has a list of attribute names stored in `attributes`
+            // If no class is found with the provided name, throw an exception
+            throw new TMDBException(ErrorList.CLASS_NAME_DOES_NOT_EXIST, "No class found with the name: " + tableName);
+        else
+            return attributes;
     }
 
     /**
-     * 给定表名(类名), 获取表在classTable中属性的数量
+     * Given a classId, get the attribute names of the class
+     * @param classId The id of the class
+     * @return The attribute names of the given classId
+     * @throws TMDBException If no class is found with the given id, throw an exception
+     */
+    public List<String> getColumns(int classId) throws TMDBException {
+        List<String> attributes = new ArrayList<>();
+        for (ClassTableItem i : getClassTableList()) {
+            if (i.classid == classId) {
+                attributes.add(i.attrname);
+            }
+        }
+        if (attributes.isEmpty())
+            // If no class is found with the provided ID, throw an exception
+            throw new TMDBException(ErrorList.CLASS_ID_DOES_NOT_EXIST,"No class found with ID: " + classId);
+        else
+            return attributes;
+    }
+
+
+    /**
+     * 给定表名(类名), 获取表在中属性的数量
      * @param tableName 表名(类名)
      * @return 给定表名(类名)所具有的属性数量(attrNum)
      * @throws TMDBException 不存在给定表名的表，抛出异常
      */
     public int getClassAttrnum(String tableName) throws TMDBException {
-        // TODO
-        // 不存在时抛出异常
-        for (ClassTableItem item : getClassTableList()){
-            if (item.classname.equals(tableName)){
-                return item.attrnum;
+        for (ClassTableItem i : getClassTableList()) {
+            if (i.classname.equals(tableName)) {
+                return i.attrnum;
             }
         }
-        throw new TMDBException(ErrorList.CLASS_NAME_DOES_NOT_EXIST, tableName);
+        throw new TMDBException(ErrorList.CLASS_NAME_DOES_NOT_EXIST, "No class found with the name: " + tableName);
     }
 
     /**
@@ -172,14 +192,13 @@ public class MemConnect {
      * @throws TMDBException 不存在给定表名的表，抛出异常
      */
     public int getClassAttrnum(int classId) throws TMDBException {
-        // TODO
-        // 不存在时抛出异常
-        for (ClassTableItem item : getClassTableList()){
-            if (item.classid == classId){
-                return item.attrnum;
+        for (ClassTableItem item : getClassTableList()) {
+            if (item.classid == classId) {
+                return item.attrnum; // Return the number of attributes for the class
             }
         }
-        throw new TMDBException(ErrorList.CLASS_ID_DOES_NOT_EXIST, classId);
+        // If no class is found with the provided ID, throw an exception
+        throw new TMDBException(ErrorList.CLASS_ID_DOES_NOT_EXIST,"No class found with ID: " + classId);
     }
 
     /**
@@ -189,29 +208,18 @@ public class MemConnect {
      * @return 属性名列表对应的attrid列表
      */
     public int[] getAttridList(int classId, List<String> columns) throws TMDBException {
-        // TODO
-        // 不存在时抛出异常
-        // 创建一个HashMap<String, Integer>，将字符串映射到对应的下标
-        HashMap<String, Integer> columnIndexMap = new HashMap<>();
-        // 遍历List，将每个元素和它的下标放入HashMap中
-        for (int i = 0; i < columns.size(); i++) {
-            columnIndexMap.put(columns.get(i), i);
-        }
-        int[] attridList = new int[columns.size()];
+        List<Integer> arrlist = new ArrayList<>();
         for (ClassTableItem item : getClassTableList()) {
-            if (item.classid != classId)
-                continue;
-            if (columnIndexMap.containsKey(item.attrname)) {
-                // 这里默认columns没有重复的列名
-                attridList[columnIndexMap.get(item.attrname)] = item.attrid;
-                columnIndexMap.put(item.attrname, -1);
+            if (item.classid == classId && columns.contains(item.attrname) ) {
+                arrlist.add(item.attrid);
             }
         }
-        for (HashMap.Entry<String, Integer> entry : columnIndexMap.entrySet()) {
-            if (entry.getValue() != -1)
-                throw new TMDBException(ErrorList.COLUMN_NAME_DOES_NOT_EXIST, entry.getKey());
-        }
-        return attridList;
+        if(arrlist.isEmpty())
+            // If no class is found with the provided ID, throw an exception
+            throw new TMDBException(ErrorList.CLASS_ID_DOES_NOT_EXIST,"No class found with ID: " + classId);
+        int[] intArray = arrlist.stream().mapToInt(Integer::intValue).toArray();
+        return  intArray;
+
     }
 
     /**
@@ -221,14 +229,12 @@ public class MemConnect {
      * @return 属性对应的id
      */
     public int getAttrid(int classId, String attrName) throws TMDBException {
-        // TODO
-        // 不存在时抛出异常
         for (ClassTableItem item : getClassTableList()) {
-            if (item.classid == classId && item.attrname.equals(attrName))
+            if (item.classid == classId && attrName.equals(item.attrname) ) {
                 return item.attrid;
+            }
         }
-        // 此处异常有可能是因为表不存在引起的，也有可能是属性名不存在引起的
-        throw new TMDBException(ErrorList.COLUMN_NAME_DOES_NOT_EXIST, attrName);
+        return -1;
     }
 
     /**
@@ -239,6 +245,27 @@ public class MemConnect {
      */
     public TupleList getTupleList(FromItem fromItem) throws TMDBException {
         int classId = getClassId(((Table) fromItem).getName());
+        TupleList tupleList = new TupleList();
+        for (ObjectTableItem item : getObjectTableList()) {
+            if (item.classid != classId) {
+                continue;
+            }
+            Tuple tuple = GetTuple(item.tupleid);
+            if (tuple != null && !tuple.delete) {
+                tuple.setTupleId(item.tupleid);
+                tupleList.addTuple(tuple);
+            }
+        }
+        return tupleList;
+    }
+
+    /**
+     * 给定classID，获取表下的所有元组
+     * @param classId 类id
+     * @return 查询语句中，该表之下所具有的所有元组
+     * @throws TMDBException 不存在给定表名的表，抛出异常
+     */
+    public TupleList getTupleList(int classId) throws TMDBException {
         TupleList tupleList = new TupleList();
         for (ObjectTableItem item : getObjectTableList()) {
             if (item.classid != classId) {
@@ -277,18 +304,33 @@ public class MemConnect {
         return classTableList;
     }
 
+    public ArrayList<ClassTableItem> copyClassTableList(String ClassName) throws TMDBException{
+        ArrayList<ClassTableItem> classTableList = new ArrayList<>();
+        for (ClassTableItem item : getClassTableList()){
+            if (item.classname.equals(ClassName)){
+                // 硬拷贝，不然后续操作会影响原始信息
+                ClassTableItem classTableItem = item.getCopy();
+                classTableList.add(classTableItem);
+            }
+        }
+        if (classTableList.isEmpty()) {
+            throw new TMDBException(ErrorList.CLASS_NAME_DOES_NOT_EXIST, ClassName);
+        }
+        return classTableList;
+    }
+
     /**
      * 给定表名，返回该表是否存在，存在返回true
      * @param tableName 表名
      * @return 存在返回true，否则返回false
      */
     public boolean classExist(String tableName) {
-        // TODO
-        for (ClassTableItem item : getClassTableList()) {
-            if (item.classname.equals(tableName))
-                return true;
+        for (ClassTableItem item :  getClassTableList()) {
+            if (item.classname.equals(tableName)) {
+                return true; // 如果找到匹配的类名，返回true
+            }
         }
-        return false;
+        return false; // 如果遍历完列表后没有找到，返回false
     }
 
     /**
@@ -298,12 +340,12 @@ public class MemConnect {
      * @return 存在返回true，否则返回false
      */
     public boolean columnExist(String tableName, String columnName) throws TMDBException {
-        // TODO
         for (ClassTableItem item : getClassTableList()) {
-            if (item.classname.equals(tableName) && item.attrname.equals(columnName))
-                return true;
+            if (item.classname.equals(tableName)&&item.attrname.equals(columnName)) {
+                return true; // 如果找到匹配的类名，返回true
+            }
         }
-        return false;
+        return false; // 如果遍历完列表后没有找到，返回false
     }
 
     /**
@@ -313,16 +355,84 @@ public class MemConnect {
      * @throws TMDBException 不存在给定表名的表，抛出异常
      */
     public ArrayList<Integer> getDeputyIdList(int classId) throws TMDBException {
-        // TODO
-        // 不存在时抛出异常
-        ArrayList<Integer> deputyIdList = new ArrayList<Integer>();
+        ArrayList<Integer> deputyIds = new ArrayList<>();
+        boolean found = true;
         for (DeputyTableItem item : getDeputyTableList()) {
-            if (item.originid == classId)
-                deputyIdList.add(item.deputyid);
+            if (item.originid == classId) {
+                deputyIds.add(item.deputyid);
+                found = true;
+            }
         }
-        if (deputyIdList.isEmpty())
-            throw new TMDBException(ErrorList.CLASS_ID_DOES_NOT_EXIST, classId);
-        return deputyIdList;
+        return deputyIds;
+    }
+
+    /**
+     * Given a deputyClassId, get the corresponding origin classes
+     * @param deputyClassId The id of the deputy class
+     * @return The origin classes of the given deputyClassId
+     * @throws TMDBException If no deputy class is found with the given id, throw an exception
+     */
+    public List<Integer> getOriginIDList(int deputyClassId) throws TMDBException {
+        List<Integer> originClasses = new ArrayList<>();
+        for (DeputyTableItem item : getDeputyTableList()) {
+            if (item.deputyid == deputyClassId) {
+                originClasses.add(item.originid); // Add the origin class for the deputy class
+            }
+        }
+        if (originClasses.isEmpty())
+            // If no deputy class is found with the provided ID, throw an exception
+            throw new TMDBException(ErrorList.DEPUTY_ID_DOES_NOT_EXIST,"No deputy class found with ID: " + deputyClassId);
+        else
+            return originClasses;
+    }
+
+    /**
+     * Given an originId and a deputyId, get the corresponding deputyId
+     * @param originId1 The id of the origin class
+     * @param deputyId The id of the deputy class
+     * @return The deputy class of the given originId
+     * @throws TMDBException If no deputy class is found with the given id, throw an exception
+     */
+    public Integer getAnotherOriginID(int deputyId, int originId1) throws TMDBException {
+        for (DeputyTableItem item : getDeputyTableList()) {
+            if (item.deputyid == deputyId && item.originid != originId1) {
+                return item.originid; // Return the origin class for the deputy class
+            }
+        }
+        // If no deputy class is found with the provided ID, throw an exception
+        throw new TMDBException(ErrorList.DEPUTY_ID_DOES_NOT_EXIST,"No deputy class found with ID: " + deputyId);
+    }
+
+    /**
+     * Given a deputyId, get the corresponding deputytype
+     * @param deputyId The id of the deputy class
+     * @return The deputytype of the given deputyId
+     * @throws TMDBException If no deputy class is found with the given id, throw an exception
+     */
+    public String[] getDeputyType(int deputyId) throws TMDBException {
+        for (DeputyTableItem item : getDeputyTableList()) {
+            if (item.deputyid == deputyId) {
+                return item.deputyrule; // Return the deputytype for the deputy class
+            }
+        }
+        // If no deputy class is found with the provided ID, throw an exception
+        throw new TMDBException(ErrorList.DEPUTY_ID_DOES_NOT_EXIST,"No deputy class found with ID: " + deputyId);
+    }
+
+    /**
+     * Given an originId, get the corresponding deputytypes
+     * @param originId The id of the origin class
+     * @return The deputytypes of the given originId
+     * @throws TMDBException If no deputy class is found with the given id, throw an exception
+     */
+    public String[][] getDeputyTypeList(int originId) throws TMDBException {
+        List<String[]> deputyTypes = new ArrayList<>();
+        for (DeputyTableItem item : getDeputyTableList()) {
+            if (item.originid == originId) {
+                deputyTypes.add(item.deputyrule); // Add the deputytype for the deputy class
+            }
+        }
+        return deputyTypes.toArray(new String[0][]);
     }
 
     public boolean Condition(String attrtype, Tuple tuple, int attrid, String value1) {
@@ -387,6 +497,27 @@ public class MemConnect {
 
     // 获取系统表表项
     public static List<ObjectTableItem> getObjectTableList() { return MemManager.objectTable.objectTableList; }
+
+    //通过元组id获取ObjectTableItem
+    public static List<ObjectTableItem> getObjectTableItemByTuple(Integer tupleid) {
+        List<ObjectTableItem> objectTableItems = new ArrayList<>();
+        for (ObjectTableItem item : getObjectTableList()) {
+            if (item.tupleid == tupleid) {
+                objectTableItems.add(item);
+            }
+        }
+        return objectTableItems;
+    }
+
+    public String getDetailDeputyRule(int deputyId) {
+        List<SwitchingTableItem> SwitchingTableList = MemManager.switchingTable.switchingTableList;
+        for (SwitchingTableItem item : SwitchingTableList) {
+            if (item.deputyId== deputyId) {
+                return item.rule.substring(1);
+            }
+        }
+        return "";
+    }
 
     public static List<ClassTableItem> getClassTableList() { return MemManager.classTable.classTableList; }
 
