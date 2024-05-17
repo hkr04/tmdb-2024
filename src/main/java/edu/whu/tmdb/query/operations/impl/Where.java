@@ -59,12 +59,22 @@ public class Where {
         switch (opt){
             case "AndExpression":
                 result = andExpression((AndExpression) expression, selectResult); break;
+            case "OrExpression":
+                result = orExpression((OrExpression) expression, selectResult); break;
             case "InExpression":
                 result = inExpression((InExpression) expression, selectResult); break;
             case "EqualsTo":
                 result = equalsToExpression((EqualsTo) expression, selectResult); break;
             case "Function":
                 result = function((Function)expression, selectResult); break;
+            case "GreaterThanEquals":
+                result = greaterThanEquals((GreaterThanEquals) expression, selectResult); break;
+            case "GreaterThan":
+                result = greaterThan((GreaterThan) expression, selectResult); break;
+            case "MinorThanEquals":
+                result = minorThanEquals((MinorThanEquals) expression, selectResult); break;
+            case "MinorThan":
+                result = minorThan((MinorThan) expression, selectResult); break;
         }
         return result;
     }
@@ -195,17 +205,24 @@ public class Where {
     }
 
     public SelectResult orExpression(OrExpression expression,SelectResult selectResult) throws TMDBException, IOException {
-        // TODO-task7
+        // 获取表达式的左右两部分
         Expression left = expression.getLeftExpression();
         Expression right = expression.getRightExpression();
-        SelectResult selectResult1 = execute(left, selectResult);
+
+        SelectResult selectResultrenew = new SelectResult(selectResult.getTpl(), selectResult.getClassName(), selectResult.getAttrname(), selectResult.getAlias(), selectResult.getAttrid(), selectResult.getType());
+        selectResultrenew.setTpl(selectResult.getTpl());
+
+        SelectResult selectResult1 = execute(left, selectResultrenew);
         SelectResult selectResult2 = execute(right, selectResult);
-        HashSet<Tuple> selectResultSet1 = getTupleSet(selectResult1);
-        HashSet<Tuple> selectResultSet2 = getTupleSet(selectResult2);
-        HashSet<Tuple> union = new HashSet<>(selectResultSet1);
-        // 将满足左边或右边条件的Tuple加入union中
-        union.addAll(selectResultSet2);
-        return getSelectResultFromSet(selectResult, union);
+        //将满足左条件或者右条件的Tuple加入overlap中
+        HashSet<Tuple> selectResultSet1=getTupleSet(selectResult1);
+        HashSet<Tuple> selectResultSet2=getTupleSet(selectResult2);
+        //将selectResultSet2中tuple加入selectResultSet1中，这里将selectResultSet1作为结果集合
+        for(Tuple tuple:selectResultSet2){
+            selectResultSet1.add(tuple);
+        }
+        // 从合并的结果,即添加完的selectResultSet1中构建 SelectResult 返回
+        return getSelectResultFromSet(selectResult, selectResultSet1);
     }
 
     public SelectResult inExpression(InExpression expression, SelectResult selectResult) throws TMDBException, IOException {
