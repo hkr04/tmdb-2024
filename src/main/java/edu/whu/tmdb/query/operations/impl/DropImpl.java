@@ -6,6 +6,7 @@ import net.sf.jsqlparser.statement.Statement;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 import edu.whu.tmdb.storage.memory.SystemTable.BiPointerTableItem;
 import edu.whu.tmdb.storage.memory.SystemTable.ClassTableItem;
@@ -56,6 +57,17 @@ public class DropImpl implements Drop {
      */
     private void dropClassTable(int classId) {
         // TODO-task4
+        ArrayList<ClassTableItem> tempC=new ArrayList<>();
+        for (int i = 0; i <  MemConnect.getClassTableList().size(); i++) {
+            ClassTableItem classTableItem =MemConnect.getClassTableList().get(i);
+            if(classTableItem.classid==classId){
+                tempC.add(classTableItem);
+            }
+        }
+        for (ClassTableItem temp :
+                tempC) {
+            MemConnect.getClassTableList().remove(temp);
+        }
     }
 
     /**
@@ -64,7 +76,18 @@ public class DropImpl implements Drop {
      * @param deputyClassIdList 作为返回值，源类对应的代理类id列表
      */
     private void dropDeputyClassTable(int classId, ArrayList<Integer> deputyClassIdList) {
-        // TODO-task4
+        ArrayList<DeputyTableItem> tempD=new ArrayList<>();
+        ArrayList<Integer> toDrop=new ArrayList<>();
+        for (int i = 0; i < MemConnect.getDeputyTableList().size(); i++) {
+            DeputyTableItem deputyTableItem = MemConnect.getDeputyTableList().get(i);
+            if(deputyTableItem.originid==classId){
+                toDrop.add(deputyTableItem.deputyid);
+                tempD.add(deputyTableItem);
+            }
+        }
+        for(DeputyTableItem temp: tempD){
+            MemConnect.getDeputyTableList().remove(temp);
+        }
     }
 
     /**
@@ -72,7 +95,16 @@ public class DropImpl implements Drop {
      * @param classId 源类id
      */
     private void dropBiPointerTable(int classId) {
-        // TODO-task4
+        ArrayList<BiPointerTableItem> tempB=new ArrayList<>();
+        for (int i = 0; i < MemConnect.getBiPointerTableList().size(); i++) {
+            BiPointerTableItem biPointerTableItem = MemConnect.getBiPointerTableList().get(i);
+            if(biPointerTableItem.objectid==classId || biPointerTableItem.deputyobjectid==classId){
+                tempB.add(biPointerTableItem);
+            }
+        }
+        for(BiPointerTableItem temp:tempB){
+            MemConnect.getBiPointerTableList().remove(temp);
+        }
     }
 
     /**
@@ -81,6 +113,16 @@ public class DropImpl implements Drop {
      */
     private void dropSwitchingTable(int classId) {
         // TODO-task4
+        ArrayList<SwitchingTableItem> tempS=new ArrayList<>();
+        for (int i = 0; i < MemConnect.getSwitchingTableList().size(); i++) {
+            SwitchingTableItem switchingTableItem = MemConnect.getSwitchingTableList().get(i);
+            if(switchingTableItem.oriId==classId || switchingTableItem.deputyId==classId){
+                tempS.add(switchingTableItem);
+            }
+        }
+        for(SwitchingTableItem temp:tempS){
+            MemConnect.getSwitchingTableList().remove(temp);
+        }
     }
 
     /**
@@ -90,6 +132,30 @@ public class DropImpl implements Drop {
     private void dropObjectTable(int classId) {
         // TODO-task4
         // 使用MemConnect.getObjectTableList().remove();
+        ArrayList<ObjectTableItem> tempT=new ArrayList<>();
+        ArrayList<Integer> toDrop=new ArrayList<>();
+        for (int i = 0; i < MemConnect.getDeputyTableList().size(); i++) {
+            DeputyTableItem deputyTableItem = MemConnect.getDeputyTableList().get(i);
+            if(deputyTableItem.originid==classId){
+                toDrop.add(deputyTableItem.deputyid);
+            }
+        }
+        for (int i = 0; i < MemConnect.getObjectTableList().size(); i++) {
+            ObjectTableItem objectTableItem = MemConnect.getObjectTableList().get(i);
+            if(objectTableItem.classid==classId ){
+                memConnect.DeleteTuple(objectTableItem.tupleid);
+                tempT.add(objectTableItem);
+            }
+        }
+        for(ObjectTableItem temp:tempT){
+            MemConnect.getObjectTableList().remove(temp);
+        }
+        if(toDrop.isEmpty()){
+            return;
+        }
+        for (int i = 0; i < toDrop.size(); i++) {
+            drop(toDrop.get(i));
+        }
     }
 
 }
