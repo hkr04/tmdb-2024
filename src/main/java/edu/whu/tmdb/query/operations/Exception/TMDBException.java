@@ -53,6 +53,8 @@ public class TMDBException extends Exception{
                 System.out.println("type: " + type + " is not supported"); break;
             case ErrorList.TYPE_DOES_NOT_MATCH:
                 System.out.println("type does not match"); break;
+            case ErrorList.LIMIT_VALUES_ERROR:
+                System.out.println("limit values Error"); break;
             default:
                 System.out.println("ERROR"); break;
         }
