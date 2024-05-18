@@ -20,6 +20,7 @@ public class Main {
     public static void main(String[] args) throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
         String sqlCommand;
+        Transaction transaction = Transaction.getInstance(); // 提前初始化实例
 
         // 调试用
         while (true) {

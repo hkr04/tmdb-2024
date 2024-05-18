@@ -3,7 +3,6 @@ package edu.whu.tmdb.util;
 import edu.whu.tmdb.query.operations.utils.MemConnect;
 import edu.whu.tmdb.query.operations.utils.SelectResult;
 import edu.whu.tmdb.storage.memory.SystemTable.BiPointerTableItem;
-import edu.whu.tmdb.storage.memory.SystemTable.ClassTable;
 import edu.whu.tmdb.storage.memory.SystemTable.ClassTableItem;
 import edu.whu.tmdb.storage.memory.SystemTable.DeputyTableItem;
 import edu.whu.tmdb.storage.memory.SystemTable.SwitchingTableItem;
@@ -15,6 +14,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DbOperation {
+    private MemConnect memConnect;
+
+    public DbOperation() {
+        this.memConnect = MemConnect.getInstance(MemManager.getInstance());
+    }
     /**
      * 给定元组查询结果，输出查询表格
      * @param result 查询语句的查询结果
@@ -80,7 +84,7 @@ public class DbOperation {
 
 
     public static void showClassTable() {
-        List<ClassTableItem> classTableLists = MemManager.classTable.classTableList;
+        List<ClassTableItem> classTableLists = MemConnect.getClassTableList();
 
         // 打印表头
         System.out.printf("| %-20s | %-8s | %-20s | %-8s | %-14s |\n", "class name", "class id", "attribute name", "attribute id", "attribute type");
@@ -91,7 +95,7 @@ public class DbOperation {
     }
 
     public static void showDeputyTable() {
-        List<DeputyTableItem> deputyTableLists = MemManager.deputyTable.deputyTableList;
+        List<DeputyTableItem> deputyTableLists = MemConnect.getDeputyTableList();
         // Print table header
         System.out.printf("| %-20s | %-20s |\n", "origin class id", "deputy class id");
 
@@ -104,7 +108,7 @@ public class DbOperation {
 
     public static void showBiPointerTable() {
         // TODO-task2
-        List<BiPointerTableItem> biPointerTableLists = MemManager.biPointerTable.biPointerTableList;
+        List<BiPointerTableItem> biPointerTableLists = MemConnect.getBiPointerTableList();
         // Print table header
         System.out.printf("| %-20s | %-14s | %-12s | %-16s |\n","class id", "object id","deputy id","deputy object id");
 
@@ -118,7 +122,7 @@ public class DbOperation {
 
 
     public static void showSwitchingTable() {
-        List<SwitchingTableItem> switchingTableLists = MemManager.switchingTable.switchingTableList; // Assumed access to a list of switching table items
+        List<SwitchingTableItem> switchingTableLists = MemConnect.getSwitchingTableList(); // Assumed access to a list of switching table items
 
         // Print table header
         System.out.printf("| %-20s | %-11s | %-16s | %-14s | %-14s | %-17s |\n","origin class id", "origin attribute id", "origin attribute name", "deputy class id", "deputy attribute id", "deputy attribute name");
