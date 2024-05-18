@@ -367,7 +367,7 @@ public class SelectImpl implements edu.whu.tmdb.query.operations.Select {
         int IndexInEntireResult = getIndexInEntireResult(entireResult, TableColumn.get(0), TableColumn.get(1));
         // 4.剩余属性赋值到 projectResult
         projectResult.getAlias()[indexInResult] = alias;
-        projectResult.getAttrname()[indexInResult] = selectItem.getExpression().toString();;
+        projectResult.getAttrname()[indexInResult] = alias;
         projectResult.getClassName()[indexInResult] = entireResult.getClassName()[IndexInEntireResult];
         projectResult.getType()[indexInResult] = entireResult.getType()[IndexInEntireResult];
         projectResult.getAttrid()[indexInResult] = indexInResult;   //projectResult的赋值下标，表示查询结果的列数

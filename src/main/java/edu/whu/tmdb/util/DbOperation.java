@@ -42,12 +42,12 @@ public class DbOperation {
      */
     public static void resetDB() {
         // 仓库路径
-        String repositoryPath = "D:\\cs\\JavaProject\\TMDB";
+        String repositoryPath = "./"; 
 
         // 子目录路径
-        String sysPath = repositoryPath + File.separator + "data\\sys";
-        String logPath = repositoryPath + File.separator + "data\\log";
-        String levelPath = repositoryPath + File.separator + "data\\level";
+        String sysPath = repositoryPath + File.separator + "data/sys";
+        String logPath = repositoryPath + File.separator + "data/log";
+        String levelPath = repositoryPath + File.separator + "data/level";
 
         List<String> filePath = new ArrayList<>();
         filePath.add(sysPath);
