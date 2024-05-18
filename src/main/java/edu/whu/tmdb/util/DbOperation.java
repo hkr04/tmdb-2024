@@ -6,7 +6,6 @@ import edu.whu.tmdb.storage.memory.SystemTable.BiPointerTableItem;
 import edu.whu.tmdb.storage.memory.SystemTable.ClassTableItem;
 import edu.whu.tmdb.storage.memory.SystemTable.DeputyTableItem;
 import edu.whu.tmdb.storage.memory.SystemTable.SwitchingTableItem;
-import edu.whu.tmdb.storage.memory.MemManager;
 import edu.whu.tmdb.storage.memory.Tuple;
 
 import java.io.File;
@@ -14,11 +13,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DbOperation {
-    private MemConnect memConnect;
-
-    public DbOperation() {
-        this.memConnect = MemConnect.getInstance(MemManager.getInstance());
-    }
     /**
      * 给定元组查询结果，输出查询表格
      * @param result 查询语句的查询结果
