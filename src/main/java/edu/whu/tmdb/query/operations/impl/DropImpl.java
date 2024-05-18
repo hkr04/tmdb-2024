@@ -40,13 +40,17 @@ public class DropImpl implements Drop {
     public void drop(int classId) {
         // TODO-task4
         ArrayList<Integer> deputyClassIdList = new ArrayList<>();   // 存储该类对应所有代理类id
+        deputyClassIdList.add(classId);
 
-        dropClassTable(classId);                            // 1.删除ClassTableItem
-        dropDeputyClassTable(classId, deputyClassIdList);   // 2.获取代理类id并在表中删除
-        dropBiPointerTable(classId);                        // 3.删除 源类/对象<->代理类/对象 的双向关系表
-        dropSwitchingTable(classId);                        // 4.删除switchingTable
-        dropObjectTable(classId);                           // 5.删除已创建的源类对象
-
+        int head = 0;
+        while (head < deputyClassIdList.size()) {
+            classId = deputyClassIdList.get(head++);
+            dropClassTable(classId);                            // 1.删除ClassTableItem
+            dropDeputyClassTable(classId, deputyClassIdList);   // 2.获取代理类id并在表中删除
+            dropBiPointerTable(classId);                        // 3.删除 源类/对象<->代理类/对象 的双向关系表
+            dropSwitchingTable(classId);                        // 4.删除switchingTable
+            dropObjectTable(classId);                           // 5.删除已创建的源类对象
+        }
         // 6.递归删除代理类相关
         // TODO-task4
     }
@@ -77,11 +81,10 @@ public class DropImpl implements Drop {
      */
     private void dropDeputyClassTable(int classId, ArrayList<Integer> deputyClassIdList) {
         ArrayList<DeputyTableItem> tempD=new ArrayList<>();
-        ArrayList<Integer> toDrop=new ArrayList<>();
         for (int i = 0; i < MemConnect.getDeputyTableList().size(); i++) {
             DeputyTableItem deputyTableItem = MemConnect.getDeputyTableList().get(i);
             if(deputyTableItem.originid==classId){
-                toDrop.add(deputyTableItem.deputyid);
+                deputyClassIdList.add(deputyTableItem.deputyid);
                 tempD.add(deputyTableItem);
             }
         }
