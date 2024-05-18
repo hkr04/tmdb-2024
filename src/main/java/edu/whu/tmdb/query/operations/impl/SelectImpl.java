@@ -146,7 +146,7 @@ public class SelectImpl implements edu.whu.tmdb.query.operations.Select {
                 }
                 ArrayList<Object> thisColumn=new ArrayList<>();
                 if(selectItem.getExpression().toString().equals(groupByElement)
-                ||(selectItem.getAlias()!=null && selectItem.getAlias().getName().equals(groupByElement))){
+                        ||(selectItem.getAlias()!=null && selectItem.getAlias().getName().equals(groupByElement))){
                     for (Object o :
                             resultMap.keySet()) {
                         thisColumn.add(o);
@@ -159,7 +159,7 @@ public class SelectImpl implements edu.whu.tmdb.query.operations.Select {
                     int pIndex=-1;
                     for (int j = 0; j < selectResult.getAttrname().length; j++) {
                         if(p.equals(selectResult.getAttrname()[j])
-                        || p.equals(selectResult.getAlias()[j])){
+                                || p.equals(selectResult.getAlias()[j])){
                             pIndex=j;
                         }
                     }
@@ -209,7 +209,7 @@ public class SelectImpl implements edu.whu.tmdb.query.operations.Select {
             ArrayList<Tuple> tuples = resultMap.get(k);
             List<Double> temp=new ArrayList<Double>();
             for (Tuple t:
-                 tuples) {
+                    tuples) {
                 if(t.tuple[pIndex]!=null) {
                     temp.add(Double.parseDouble((String) t.tuple[pIndex]));
                 }
@@ -330,7 +330,7 @@ public class SelectImpl implements edu.whu.tmdb.query.operations.Select {
      * @param indexInResult projectResult的赋值下标，表示查询结果的列数
      */
     private void projectSelectExpression(SelectItem item, SelectResult entireResult,
-                SelectResult projectResult, TupleList resTupleList, int indexInResult) throws TMDBException {
+                                         SelectResult projectResult, TupleList resTupleList, int indexInResult) throws TMDBException {
         // TODO-task5
         SelectExpressionItem selectItem = (SelectExpressionItem) item;
         // 1.attrName赋值
