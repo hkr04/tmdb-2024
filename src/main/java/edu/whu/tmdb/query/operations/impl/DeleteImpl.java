@@ -89,9 +89,6 @@ public class DeleteImpl implements Delete {
                 MemConnect.getBiPointerTable().biPointerTableList.remove(biPointerTableItem);
             }
         }
-//        for (int i = 0; i < tupleList.tuplelist.size(); i++) {
-//            int sourceClassId = tupleList.tuplelist.get(i).classId;
-//            ArrayList<Integer> deputyTupleIdList = memConnect.getDeputyIdList(sourceClassId);
 
         // 3.根据biPointerTable递归删除代理类相关表
         if (deputyTupleIdList.isEmpty()) {return; }
