@@ -38,7 +38,6 @@ public class DropImpl implements Drop {
     }
 
     public void drop(int classId) {
-        // TODO-task4
         ArrayList<Integer> deputyClassIdList = new ArrayList<>();   // 存储该类对应所有代理类id
         deputyClassIdList.add(classId);
 
@@ -52,7 +51,6 @@ public class DropImpl implements Drop {
             dropObjectTable(classId);                           // 5.删除已创建的源类对象
         }
         // 6.递归删除代理类相关
-        // TODO-task4
     }
 
     /**
@@ -60,17 +58,17 @@ public class DropImpl implements Drop {
      * @param classId 要删除的表对应的id
      */
     private void dropClassTable(int classId) {
-        // TODO-task4
+        List<ClassTableItem> ClassTableList = MemConnect.getClassTableList();
         ArrayList<ClassTableItem> tempC=new ArrayList<>();
-        for (int i = 0; i <  MemConnect.getClassTableList().size(); i++) {
-            ClassTableItem classTableItem =MemConnect.getClassTableList().get(i);
+        for (int i = 0; i <  ClassTableList.size(); i++) {
+            ClassTableItem classTableItem =ClassTableList.get(i);
             if(classTableItem.classid==classId){
                 tempC.add(classTableItem);
             }
         }
         for (ClassTableItem temp :
                 tempC) {
-            MemConnect.getClassTableList().remove(temp);
+            ClassTableList.remove(temp);
         }
     }
 
@@ -80,16 +78,20 @@ public class DropImpl implements Drop {
      * @param deputyClassIdList 作为返回值，源类对应的代理类id列表
      */
     private void dropDeputyClassTable(int classId, ArrayList<Integer> deputyClassIdList) {
+        List<DeputyTableItem> DeputyTableList = MemConnect.getDeputyTableList();
+
         ArrayList<DeputyTableItem> tempD=new ArrayList<>();
-        for (int i = 0; i < MemConnect.getDeputyTableList().size(); i++) {
-            DeputyTableItem deputyTableItem = MemConnect.getDeputyTableList().get(i);
+        for (int i = 0; i < DeputyTableList.size(); i++) {
+            DeputyTableItem deputyTableItem =DeputyTableList.get(i);
             if(deputyTableItem.originid==classId){
                 deputyClassIdList.add(deputyTableItem.deputyid);
                 tempD.add(deputyTableItem);
+            }else if (deputyTableItem.deputyid == classId) {
+                tempD.add(deputyTableItem);  // Remove the item from the list
             }
         }
         for(DeputyTableItem temp: tempD){
-            MemConnect.getDeputyTableList().remove(temp);
+            DeputyTableList.remove(temp);
         }
     }
 
@@ -115,7 +117,6 @@ public class DropImpl implements Drop {
      * @param classId 源类id
      */
     private void dropSwitchingTable(int classId) {
-        // TODO-task4
         ArrayList<SwitchingTableItem> tempS=new ArrayList<>();
         for (int i = 0; i < MemConnect.getSwitchingTableList().size(); i++) {
             SwitchingTableItem switchingTableItem = MemConnect.getSwitchingTableList().get(i);
@@ -133,16 +134,8 @@ public class DropImpl implements Drop {
      * @param classId 源类id
      */
     private void dropObjectTable(int classId) {
-        // TODO-task4
         // 使用MemConnect.getObjectTableList().remove();
         ArrayList<ObjectTableItem> tempT=new ArrayList<>();
-        ArrayList<Integer> toDrop=new ArrayList<>();
-        for (int i = 0; i < MemConnect.getDeputyTableList().size(); i++) {
-            DeputyTableItem deputyTableItem = MemConnect.getDeputyTableList().get(i);
-            if(deputyTableItem.originid==classId){
-                toDrop.add(deputyTableItem.deputyid);
-            }
-        }
         for (int i = 0; i < MemConnect.getObjectTableList().size(); i++) {
             ObjectTableItem objectTableItem = MemConnect.getObjectTableList().get(i);
             if(objectTableItem.classid==classId ){
@@ -152,12 +145,6 @@ public class DropImpl implements Drop {
         }
         for(ObjectTableItem temp:tempT){
             MemConnect.getObjectTableList().remove(temp);
-        }
-        if(toDrop.isEmpty()){
-            return;
-        }
-        for (int i = 0; i < toDrop.size(); i++) {
-            drop(toDrop.get(i));
         }
     }
 

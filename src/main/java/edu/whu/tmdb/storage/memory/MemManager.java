@@ -74,7 +74,6 @@ public class MemManager {
             f.mkdirs();
             return;
         }
-
         try {
             loadDeputyTable();
             loadSwitchingTable();

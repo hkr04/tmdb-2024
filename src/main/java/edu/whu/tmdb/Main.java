@@ -21,28 +21,36 @@ public class Main {
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
         String sqlCommand;
         Transaction transaction = Transaction.getInstance(); // 提前初始化实例
+        //调用loadclasstable的构造函数
 
         // 调试用
         while (true) {
             System.out.print("tmdb> ");
             sqlCommand = reader.readLine().trim();
             if ("exit".equalsIgnoreCase(sqlCommand)) {
+                System.out.print("\n ");
                 break;
             } else if ("resetdb".equalsIgnoreCase(sqlCommand)) {
                 DbOperation.resetDB();
+                System.out.print("\n ");
             } else if ("show BiPointerTable".equalsIgnoreCase(sqlCommand)) {
                 DbOperation.showBiPointerTable();
+                System.out.print("\n ");
             } else if ("show ClassTable".equalsIgnoreCase(sqlCommand)) {
                 DbOperation.showClassTable();
+                System.out.print("\n ");
             } else if ("show DeputyTable".equalsIgnoreCase(sqlCommand)) {
                 DbOperation.showDeputyTable();
+                System.out.print("\n ");
             } else if ("show SwitchingTable".equalsIgnoreCase(sqlCommand)) {
                 DbOperation.showSwitchingTable();
+                System.out.print("\n ");
             } else if (!sqlCommand.isEmpty()) {
                 SelectResult result = execute(sqlCommand);
                 if (result != null) {
                     DbOperation.printResult(result);
                 }
+                System.out.print("\n ");
             }
         }
 

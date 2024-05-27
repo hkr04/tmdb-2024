@@ -1,0 +1,228 @@
+# 重置数据库
+resetdb
+
+#############################################################################################
+
+#测试点1：insert语句插入修正BUG ;
+① [原有代码没有对insert语句进行插入检查check，导致可以插入两条完全一模一样的元组，但这在数据库的定义中是没有意义的，并且其他所有的查询语句和删除语句，例如select，delete语句只会每次删除完全一样的元组中的第一条，所以我们认为这里是insert源码中没有对插入进行所有元组的遍历和检查]
+
+②第二种思路是修改delete和selete和where子句中关于元组的遍历，但是得不偿失，如果数据库允许两条一模一样的元组存在则应该修改其他语句的执行逻辑，把所有的相同的元组一起删除；
+
+# create class
+CREATE CLASS table1 (id_1 int,value_1 int);
+INSERT INTO table1 VALUES (1,10);
+INSERT INTO table1 VALUES (2,20);
+INSERT INTO table1 VALUES (3,30);
+INSERT INTO table1 VALUES (4,40);
+INSERT INTO table1 VALUES (5,50);
+
+#重复执行以检查
+INSERT INTO table1 VALUES (1,10);
+INSERT INTO table1 VALUES (1,11);
+INSERT INTO table1 VALUES (2,10);
+
+select * from table1;
+
+
+#############################################################################################
+
+#测试点2，create deputy class功能实现测试：
+① 注意这里源码中实现也有bug，一个是select [attrname] as [alias]时，应该用重新赋予的别名进行表单属性的创建，这在show SwitchingTable中应该也有体现，origin attribute name和deputy attribute name应不同；所以应该在createDeputyClass 时别名的赋予创建中实现清楚。
+
+CREATE CLASS table2 (id_2 int,value_2 int);
+INSERT INTO table2 VALUES (6,60);
+INSERT INTO table2 VALUES (7,70);
+INSERT INTO table2 VALUES (8,80);
+INSERT INTO table2 VALUES (9,90);
+INSERT INTO table2 VALUES (10,100);
+
+select * from table2;
+
+CREATE CLASS table3 (id int,value1 int,value2 int);
+INSERT INTO table3 VALUES (1,10,11);
+INSERT INTO table3 VALUES (2,20,21);
+INSERT INTO table3 VALUES (3,30,31);
+INSERT INTO table3 VALUES (4,40,41);
+INSERT INTO table3 VALUES (5,50,51);
+
+select * from table3;
+
+#这里创建table3的两个DEPUTY类来测试后面的drop table；
+CREATE SELECTDEPUTY deputyTest1 AS (SELECT id as uid,value1 as v1,value2 as v2 FROM table3);
+CREATE SELECTDEPUTY deputy AS (SELECT id_1 as deid,value_1 as dev1 FROM table1);
+
+select * from deputy;
+select * from deputyTest1;
+
+#############################################################################################
+
+#测试点3，show table功能实现;[show classtable BUG已修复]
+# show table
+
+show ClassTable		// show 展示类表,存储源类和代理类的定义及其属性的定义
+show DeputyTable		// show 展示存储源类和代理类之间的代理关系
+show SwitchingTable		// show 展示源类和代理类之间指明属性的双向指针列表
+show BiPointerTable		// show 展示源类和代理类之间指明对象的双向指针列表
+
+
+#############################################################################################
+#测试点4，drop table功能实现;
+
+#这里创建table3的两个DEPUTY类来测试后面的drop table；
+CREATE SELECTDEPUTY deputyTest2 AS (SELECT id*2 as double_uid,value1*2 as double_v1,value2*2 as double_v2 FROM table3); 
+select * from deputyTest2;
+select * from deputyTest1;
+show DeputyTable
+show ClassTable
+
+# drop table
+drop class table2;		//删除普通classtable；
+drop class table1;		//table4 源类是table1，本身是代理类;
+drop class table3;		//table3本身是源类， 有两个代理类deputyTest1，deputyTest2；
+
+table2;
+table1 ——>deputy;
+table3 ——>deputyTest1;
+table3 ——>deputyTest2;
+
+#############################################################################################
+
+# 创建手机类
+create class phone (price int, brand String, type String);
+# 插入手机信息
+INSERT INTO phone VALUES (1399,xiaomi,"Redmi Note 13 Pro");
+INSERT INTO phone VALUES (2499,huawei,"nova 11");
+INSERT INTO phone VALUES (2999,xiaomi,"Civi 4 Pro");
+INSERT INTO phone VALUES (3799,xiaomi,"Redmi K70 Pro");
+INSERT INTO phone VALUES (3999,huawei,"nova 12 Pro");
+INSERT INTO phone VALUES (5199,iphone,"iPhone 15");
+INSERT INTO phone VALUES (5799,iphone,"iPhone 15 Plus");
+INSERT INTO phone VALUES (6499,huawei,"Mate 60 Pro");
+INSERT INTO phone VALUES (7399,iphone,"iPhone 15 Pro");
+INSERT INTO phone VALUES (8999,huawei,"Mate 60 Pro+");
+INSERT INTO phone VALUES (9399,iphone,"iPhone 15 ProMax");
+
+select * from phone;
+
+# 创建test类以测试多表查询
+CREATE CLASS testtable (id_1 int,value_1 int);
+INSERT INTO testtable VALUES (1,10);
+INSERT INTO testtable VALUES (2,20);
+INSERT INTO testtable VALUES (3,30);
+INSERT INTO testtable VALUES (4,40);
+INSERT INTO testtable VALUES (5,50);
+INSERT INTO testtable VALUES (6,60);
+INSERT INTO testtable VALUES (7,70);
+INSERT INTO testtable VALUES (8,80);
+INSERT INTO testtable VALUES (9,90);
+INSERT INTO testtable VALUES (10,100);
+
+select * from testtable;
+
+CREATE SELECTDEPUTY xiaomi AS (SELECT price, type FROM phone where brand ='xiaomi');
+CREATE SELECTDEPUTY huawei AS (SELECT price, type FROM phone where brand ='huawei');
+CREATE SELECTDEPUTY iphone AS (SELECT price, type FROM phone where brand ='iphone');
+
+# 查询代理类信息
+select * from xiaomi;
+select * from huawei;
+select * from iphone;
+
+show ClassTable		// show 展示类表
+show DeputyTable		// show 展示源类和代理类的关系表
+show SwitchingTable		// show 展示源类和代理类之间指明属性的双向指针列表
+
+#############################################################################################
+
+#Task 3:测试
+Step1：带表达式的select实现（允许对函数逻辑进行重构）
+select * from phone;
+select phone.* from phone, testtable;
+
+#测试点5，带表达式的select实现;
+select * from phone;
+select price from phone;
+select price,brand from phone;
+select * from testtable;
+select id_1*2+value_1-id_1 from testtable;
+select id_1*2+value_1-id_1 as c from testtable;		//给他一个别名展示别名
+
+#############################################################################################
+
+#测试点6，where子句的实现和where子句中or字段的实现，以及limit字段实现；
+select * from phone;
+select price,type from phone where price > 7000;
+select * from phone where price <= 2999;
+select * from phone where brand = 'xiaomi';				//字符检测
+select * from xiaomi;
+
+#limit 字段的查询
+select * from phone where price < 5000;
+select * from phone where price < 5000 limit 0;
+select * from phone where price < 5000 limit 3;
+select * from phone where price < 5000 limit 10;
+
+#跨类查询
+select type from huawei,iphone where huawei.price >= 6000 and huawei.price <=iphone.price and iphone.type = '"iPhone 15 ProMax"';
+select * from phone;
+// 跨类查询：从手机类中选出华为价格大于6000块但是比iPhone 15 ProMax便宜的华为手机型号；
+
+
+#############################################################################################
+#测试点7，delete语句实现；
+#单独删除；
+select * from phone;
+delete from phone where price < 3000;
+delete from phone where price >7000 or price = 3799;
+
+#代理类删除
+select * from huawei;
+delete from phone where brand = 'huawei';
+select * from huawei;
+
+#############################################################################################
+
+#测试点8：join deputy代理类的实现；[在insert中进行更新迁移]
+create class student (name char,studentid int);
+INSERT INTO student VALUES (a,2001);
+INSERT INTO student VALUES (b,2002);
+INSERT INTO student VALUES (c,2003);
+INSERT INTO student VALUES (d,2004);
+INSERT INTO student VALUES (e,2005);
+
+
+create class course (classname char,teacher char,classid int);
+INSERT INTO course VALUES (database1,aa,2001);
+INSERT INTO course VALUES (database2,bb,2002);
+INSERT INTO course VALUES (database3,cc,2003);
+INSERT INTO course VALUES (database6,dd,2006);
+INSERT INTO course VALUES (database7,ee,2007);
+
+select * from student;
+select * from course;
+
+#测试点9：创建joindeputy代理类class：assistant；
+//把学生的id和课程中的classid一致的课程，老师和学生姓名和课程姓名选出来；即筛选选课id和课程id一致的人员信息；
+
+CREATE JOINDEPUTY courseandstudent as (select name,classname,teacher from student,course  where studentid = classid);
+
+#测试点10：[在insert中进行更新迁移]
+select * from courseandstudent;
+INSERT INTO student VALUES (gg,2006);					// 新增了一名同学选了2006课程；
+INSERT INTO course VALUES (database4,ff,2004);			//新增了一门2004id的数据库课；
+
+
+#测试点11：[在update中进行更新迁移]
+CREATE SELECTDEPUTY studentes as (select name as newname,studentid as newid from student);
+
+select * from student;
+select * from studentes;
+select * from courseandstudent;
+
+#只修改代理类检查源类和其他代理类会不会被修改；
+UPDATE studentes SET studentid = 2007 WHERE studentid = 2001;
+
+UPDATE student SET studentid = 2006 WHERE studentid = 2001;
+
+System.out.println("indexs"+indexs);
+

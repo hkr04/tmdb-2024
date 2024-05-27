@@ -278,7 +278,6 @@ public class Where {
     }
 
     public SelectResult minorThanEquals(MinorThanEquals expression, SelectResult selectResult) throws TMDBException {
-        // TODO-task6
         ArrayList<Object> left = formula.formulaExecute(expression.getLeftExpression(), selectResult);
         ArrayList<Object> right = formula.formulaExecute(expression.getRightExpression(), selectResult);
         HashSet<Tuple> set = new HashSet<>();
@@ -291,7 +290,6 @@ public class Where {
     }
 
     public SelectResult greaterThan(GreaterThan expression, SelectResult selectResult) throws TMDBException {
-        // TODO-task6
         ArrayList<Object> left = formula.formulaExecute(expression.getLeftExpression(), selectResult);
         ArrayList<Object> right = formula.formulaExecute(expression.getRightExpression(), selectResult);
         HashSet<Tuple> set = new HashSet<>();
@@ -304,7 +302,6 @@ public class Where {
     }
 
     public SelectResult greaterThanEquals(GreaterThanEquals expression, SelectResult selectResult) throws TMDBException {
-        // TODO-task6
         ArrayList<Object> left = formula.formulaExecute(expression.getLeftExpression(), selectResult);
         ArrayList<Object> right = formula.formulaExecute(expression.getRightExpression(), selectResult);
         HashSet<Tuple> set = new HashSet<>();

@@ -58,7 +58,7 @@ public class SelectResult {
 
     public String[] getAlias() { return alias; }
 
-    // 读写字段id（我也不知道有什么用
+    // 读写字段id
     public void setAttrid(int[] attrid) { this.attrid = attrid; }
 
     public int[] getAttrid() { return attrid; }

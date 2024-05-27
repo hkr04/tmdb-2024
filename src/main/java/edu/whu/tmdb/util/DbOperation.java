@@ -3,9 +3,11 @@ package edu.whu.tmdb.util;
 import edu.whu.tmdb.query.operations.utils.MemConnect;
 import edu.whu.tmdb.query.operations.utils.SelectResult;
 import edu.whu.tmdb.storage.memory.SystemTable.BiPointerTableItem;
+import edu.whu.tmdb.storage.memory.SystemTable.ClassTable;
 import edu.whu.tmdb.storage.memory.SystemTable.ClassTableItem;
 import edu.whu.tmdb.storage.memory.SystemTable.DeputyTableItem;
 import edu.whu.tmdb.storage.memory.SystemTable.SwitchingTableItem;
+import edu.whu.tmdb.storage.memory.MemManager;
 import edu.whu.tmdb.storage.memory.Tuple;
 
 import java.io.File;
@@ -20,8 +22,8 @@ public class DbOperation {
     public static void printResult(SelectResult result) {
         // 输出表头信息
         StringBuilder tableHeader = new StringBuilder("|");
-        for (int i = 0; i < result.getAttrname().length; i++) {
-            tableHeader.append(String.format("%-20s", result.getClassName()[i] + "." + result.getAttrname()[i])).append("|");
+        for (int i = 0; i < result.getAlias().length; i++) {
+            tableHeader.append(String.format("%-20s", result.getClassName()[i] + "." + result.getAlias()[i])).append("|");
         }
         System.out.println(tableHeader);
 
@@ -83,8 +85,10 @@ public class DbOperation {
         // 打印表头
         System.out.printf("| %-20s | %-8s | %-20s | %-8s | %-14s |\n", "class name", "class id", "attribute name", "attribute id", "attribute type");
         // 遍历每个 ClassTableItem 实例，每个实例代表一个属性
+        
         for (ClassTableItem item : classTableLists) {
-            System.out.printf("| %-20s | %-8d | %-20s | %-12d | %-14s |\n", item.classname, item.classid, item.attrname, item.attrid, item.attrtype);
+            String attrDisplayName = (item.alias != null && !item.alias.isEmpty()) ? item.alias : item.attrname;
+            System.out.printf("| %-20s | %-8d | %-20s | %-12d | %-14s |\n", item.classname, item.classid, attrDisplayName, item.attrid, item.attrtype);
         }
     }
 
@@ -101,7 +105,6 @@ public class DbOperation {
 
 
     public static void showBiPointerTable() {
-        // TODO-task2
         List<BiPointerTableItem> biPointerTableLists = MemConnect.getBiPointerTableList();
         // Print table header
         System.out.printf("| %-20s | %-14s | %-12s | %-16s |\n","class id", "object id","deputy id","deputy object id");
@@ -126,5 +129,6 @@ public class DbOperation {
             System.out.printf("| %-20s | %-11s | %-16s | %-14s | %-14s | %-17s |\n",item.oriId,item.oriAttrid,item.oriAttr,item.deputyId,item.deputyAttrId,item.deputyAttr);
         }
     }
+
 }
 

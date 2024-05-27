@@ -55,6 +55,8 @@ public class TMDBException extends Exception{
                 System.out.println("type does not match"); break;
             case ErrorList.LIMIT_VALUES_ERROR:
                 System.out.println("limit values Error"); break;
+            case ErrorList.SAME_TUPLE_ALREADY_EXISTS:
+                System.out.println("the same tuple already exists"); break;
             default:
                 System.out.println("ERROR"); break;
         }
