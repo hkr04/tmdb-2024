@@ -83,7 +83,7 @@ public class DbOperation {
         List<ClassTableItem> classTableLists = MemConnect.getClassTableList();
 
         // 打印表头
-        System.out.printf("| %-20s | %-8s | %-20s | %-8s | %-14s |\n", "class name", "class id", "attribute name", "attribute id", "attribute type");
+        System.out.printf("| %-20s | %-8s | %-20s | %-12s | %-14s |\n", "class name", "class id", "attribute name", "attribute id", "attribute type");
         // 遍历每个 ClassTableItem 实例，每个实例代表一个属性
         
         for (ClassTableItem item : classTableLists) {
@@ -99,7 +99,7 @@ public class DbOperation {
 
         // Iterate over each item in the list and print formatted output
         for (DeputyTableItem item : deputyTableLists) {
-            System.out.printf("| %-20s | %-20s |\n",item.originid,item.deputyid);
+            System.out.printf("| %-20d | %-20d |\n",item.originid,item.deputyid);
         }
     }
 
@@ -111,7 +111,7 @@ public class DbOperation {
 
         // Iterate over each item in the list and print formatted output
         for (BiPointerTableItem item : biPointerTableLists) {
-            System.out.printf("| %-20s | %-14s | %-12s | %-16s |\n",item.classid,item.objectid,item.deputyid,item.deputyobjectid);
+            System.out.printf("| %-20d | %-14d | %-12d | %-16d |\n",item.classid,item.objectid,item.deputyid,item.deputyobjectid);
         }
     }
 
@@ -122,11 +122,11 @@ public class DbOperation {
         List<SwitchingTableItem> switchingTableLists = MemConnect.getSwitchingTableList(); // Assumed access to a list of switching table items
 
         // Print table header
-        System.out.printf("| %-20s | %-11s | %-16s | %-14s | %-14s | %-17s |\n","origin class id", "origin attribute id", "origin attribute name", "deputy class id", "deputy attribute id", "deputy attribute name");
+        System.out.printf("| %-20s | %-20s | %-22s | %-20s | %-20s | %-22s |\n","origin class id", "origin attribute id", "origin attribute name", "deputy class id", "deputy attribute id", "deputy attribute name");
 
         // Iterate over each item in the list and print formatted output
         for (SwitchingTableItem item : switchingTableLists) {
-            System.out.printf("| %-20s | %-11s | %-16s | %-14s | %-14s | %-17s |\n",item.oriId,item.oriAttrid,item.oriAttr,item.deputyId,item.deputyAttrId,item.deputyAttr);
+            System.out.printf("| %-20d | %-20d | %-22s | %-20d | %-20d | %-22s |\n",item.oriId,item.oriAttrid,item.oriAttr,item.deputyId,item.deputyAttrId,item.deputyAttr);
         }
     }
 

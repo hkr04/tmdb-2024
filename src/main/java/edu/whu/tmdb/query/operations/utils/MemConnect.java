@@ -526,7 +526,7 @@ public class MemConnect {
     public String getDetailDeputyRule(int deputyId) {
         List<SwitchingTableItem> SwitchingTableList = MemManager.switchingTable.switchingTableList;
         for (SwitchingTableItem item : SwitchingTableList) {
-            if (item.deputyId== deputyId) {
+            if (item.deputyId == deputyId) {
                 return item.rule.substring(1);
             }
         }

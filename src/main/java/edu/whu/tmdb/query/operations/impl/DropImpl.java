@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.TreeSet;
+import java.util.Set;
 
 import edu.whu.tmdb.storage.memory.SystemTable.BiPointerTableItem;
 import edu.whu.tmdb.storage.memory.SystemTable.ClassTableItem;
@@ -100,15 +102,23 @@ public class DropImpl implements Drop {
      * @param classId 源类id
      */
     private void dropBiPointerTable(int classId) {
-        ArrayList<BiPointerTableItem> tempB=new ArrayList<>();
-        for (int i = 0; i < MemConnect.getBiPointerTableList().size(); i++) {
-            BiPointerTableItem biPointerTableItem = MemConnect.getBiPointerTableList().get(i);
-            if(biPointerTableItem.objectid==classId || biPointerTableItem.deputyobjectid==classId){
+        List<BiPointerTableItem> BiPointerTableList = MemConnect.getBiPointerTableList();
+        Set<Integer> set = new TreeSet<>();
+        ArrayList<BiPointerTableItem> tempB = new ArrayList<>();
+        for (int i = 0; i < BiPointerTableList.size(); i++) {
+            BiPointerTableItem biPointerTableItem = BiPointerTableList.get(i);
+            if(biPointerTableItem.classid == classId){
+                set.add(biPointerTableItem.deputyobjectid);
+            }
+        }
+        for (int i = 0; i < BiPointerTableList.size(); i++) {
+            BiPointerTableItem biPointerTableItem = BiPointerTableList.get(i);
+            if(set.contains(biPointerTableItem.deputyobjectid)){
                 tempB.add(biPointerTableItem);
             }
         }
-        for(BiPointerTableItem temp:tempB){
-            MemConnect.getBiPointerTableList().remove(temp);
+        for(BiPointerTableItem temp : tempB){
+            BiPointerTableList.remove(temp);
         }
     }
 

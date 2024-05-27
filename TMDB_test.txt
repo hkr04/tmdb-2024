@@ -23,6 +23,16 @@ INSERT INTO table1 VALUES (2,10);
 
 select * from table1;
 
+Expected output:
+|table1.id_1         |table1.value_1      |
+|1                   |10                  |
+|2                   |20                  |
+|3                   |30                  |
+|4                   |40                  |
+|5                   |50                  |
+|1                   |11                  |
+|2                   |10                  |
+
 
 #############################################################################################
 
@@ -38,6 +48,14 @@ INSERT INTO table2 VALUES (10,100);
 
 select * from table2;
 
+Expected output:
+|table2.id_2         |table2.value_2      |
+|6                   |60                  |
+|7                   |70                  |
+|8                   |80                  |
+|9                   |90                  |
+|10                  |100                 |
+
 CREATE CLASS table3 (id int,value1 int,value2 int);
 INSERT INTO table3 VALUES (1,10,11);
 INSERT INTO table3 VALUES (2,20,21);
@@ -47,12 +65,39 @@ INSERT INTO table3 VALUES (5,50,51);
 
 select * from table3;
 
+Expected output:
+|table3.id           |table3.value1       |table3.value2       |
+|1                   |10                  |11                  |
+|2                   |20                  |21                  |
+|3                   |30                  |31                  |
+|4                   |40                  |41                  |
+|5                   |50                  |51                  |
+
 #这里创建table3的两个DEPUTY类来测试后面的drop table；
-CREATE SELECTDEPUTY deputyTest1 AS (SELECT id as uid,value1 as v1,value2 as v2 FROM table3);
 CREATE SELECTDEPUTY deputy AS (SELECT id_1 as deid,value_1 as dev1 FROM table1);
+CREATE SELECTDEPUTY deputyTest1 AS (SELECT id as uid,value1 as v1,value2 as v2 FROM table3);
 
 select * from deputy;
+
+Expected output:
+|deputy.id_1         |deputy.value_1      |
+|1                   |10                  |
+|2                   |20                  |
+|3                   |30                  |
+|4                   |40                  |
+|5                   |50                  |
+|1                   |11                  |
+|2                   |10                  |
+
 select * from deputyTest1;
+
+Expected output:
+|deputyTest1.id      |deputyTest1.value1  |deputyTest1.value2  |
+|1                   |10                  |11                  |
+|2                   |20                  |21                  |
+|3                   |30                  |31                  |
+|4                   |40                  |41                  |
+|5                   |50                  |51                  |
 
 #############################################################################################
 
@@ -60,9 +105,55 @@ select * from deputyTest1;
 # show table
 
 show ClassTable		// show 展示类表,存储源类和代理类的定义及其属性的定义
+
+Expected output:
+| class name           | class id | attribute name       | attribute id | attribute type |
+| table1               | 1        | id_1                 | 0            | int            |
+| table1               | 1        | value_1              | 1            | int            |
+| table2               | 2        | id_2                 | 0            | int            |
+| table2               | 2        | value_2              | 1            | int            |
+| table3               | 3        | id                   | 0            | int            |
+| table3               | 3        | value1               | 1            | int            |
+| table3               | 3        | value2               | 2            | int            |
+| deputy               | 4        | deid                 | 0            | int            |
+| deputy               | 4        | dev1                 | 1            | int            |
+| deputyTest1          | 5        | uid                  | 0            | int            |
+| deputyTest1          | 5        | v1                   | 1            | int            |
+| deputyTest1          | 5        | v2                   | 2            | int            |
+     
 show DeputyTable		// show 展示存储源类和代理类之间的代理关系
+
+Expected output:
+| origin class id      | deputy class id      |
+| 3                    | 4                    |
+| 1                    | 5                    |
+
 show SwitchingTable		// show 展示源类和代理类之间指明属性的双向指针列表
+
+Expected output:
+| origin class id      | origin attribute id | origin attribute name | deputy class id | deputy attribute id | deputy attribute name |
+| 1                    | 0                   | id_1                  | 4               | 0                   | deid                  |
+| 1                    | 1                   | value_1               | 4               | 1                   | dev1                  |
+| 3                    | 0                   | id                    | 5               | 0                   | uid                   |
+| 3                    | 1                   | value1                | 5               | 1                   | v1                    |
+| 3                    | 2                   | value2                | 5               | 2                   | v2                    |
+    
 show BiPointerTable		// show 展示源类和代理类之间指明对象的双向指针列表
+
+Expected output:
+| class id             | object id      | deputy id    | deputy object id |
+| 1                    | 0              | 4            | 17               |
+| 1                    | 1              | 4            | 18               |
+| 1                    | 2              | 4            | 19               |
+| 1                    | 3              | 4            | 20               |
+| 1                    | 4              | 4            | 21               |
+| 1                    | 5              | 4            | 22               |
+| 1                    | 6              | 4            | 23               |
+| 3                    | 12             | 5            | 24               |
+| 3                    | 13             | 5            | 25               |
+| 3                    | 14             | 5            | 26               |
+| 3                    | 15             | 5            | 27               |
+| 3                    | 16             | 5            | 28               |
 
 
 #############################################################################################
@@ -71,9 +162,52 @@ show BiPointerTable		// show 展示源类和代理类之间指明对象的双向
 #这里创建table3的两个DEPUTY类来测试后面的drop table；
 CREATE SELECTDEPUTY deputyTest2 AS (SELECT id*2 as double_uid,value1*2 as double_v1,value2*2 as double_v2 FROM table3); 
 select * from deputyTest2;
+
+Expected output:
+|deputyTest2.id * 2  |deputyTest2.value1 * 2|deputyTest2.value2 * 2|
+|2.0                 |20.0                |22.0                |
+|4.0                 |40.0                |42.0                |
+|6.0                 |60.0                |62.0                |
+|8.0                 |80.0                |82.0                |
+|10.0                |100.0               |102.0               |
+
 select * from deputyTest1;
+
+Expected output:
+|deputyTest1.id      |deputyTest1.value1  |deputyTest1.value2  |
+|1                   |10                  |11                  |
+|2                   |20                  |21                  |
+|3                   |30                  |31                  |
+|4                   |40                  |41                  |
+|5                   |50                  |51                  |
+
 show DeputyTable
+
+Expected output:
+| origin class id      | deputy class id      |
+| 1                    | 4                    |
+| 3                    | 5                    |
+| 3                    | 6                    |
+
 show ClassTable
+
+Expected output:
+| class name           | class id | attribute name       | attribute id | attribute type |
+| table1               | 1        | id_1                 | 0            | int            |
+| table1               | 1        | value_1              | 1            | int            |
+| table2               | 2        | id_2                 | 0            | int            |
+| table2               | 2        | value_2              | 1            | int            |
+| table3               | 3        | id                   | 0            | int            |
+| table3               | 3        | value1               | 1            | int            |
+| table3               | 3        | value2               | 2            | int            |
+| deputy               | 4        | deid                 | 0            | int            |
+| deputy               | 4        | dev1                 | 1            | int            |
+| deputyTest1          | 5        | uid                  | 0            | int            |
+| deputyTest1          | 5        | v1                   | 1            | int            |
+| deputyTest1          | 5        | v2                   | 2            | int            |
+| deputyTest2          | 6        | double_uid           | 0            | int            |
+| deputyTest2          | 6        | double_v1            | 1            | int            |
+| deputyTest2          | 6        | double_v2            | 2            | int            |
 
 # drop table
 drop class table2;		//删除普通classtable；
@@ -84,6 +218,11 @@ table2;
 table1 ——>deputy;
 table3 ——>deputyTest1;
 table3 ——>deputyTest2;
+
+show ClassTable;
+
+Expected output:
+[An empty line because all classtables have been removed recursively.]
 
 #############################################################################################
 
@@ -104,6 +243,20 @@ INSERT INTO phone VALUES (9399,iphone,"iPhone 15 ProMax");
 
 select * from phone;
 
+Expected output:
+|phone.price         |phone.brand         |phone.type          |
+|1399                |xiaomi              |"Redmi Note 13 Pro" |
+|2499                |huawei              |"nova 11"           |
+|2999                |xiaomi              |"Civi 4 Pro"        |
+|3799                |xiaomi              |"Redmi K70 Pro"     |
+|3999                |huawei              |"nova 12 Pro"       |
+|5199                |iphone              |"iPhone 15"         |
+|5799                |iphone              |"iPhone 15 Plus"    |
+|6499                |huawei              |"Mate 60 Pro"       |
+|7399                |iphone              |"iPhone 15 Pro"     |
+|8999                |huawei              |"Mate 60 Pro+"      |
+|9399                |iphone              |"iPhone 15 ProMax"  |
+
 # 创建test类以测试多表查询
 CREATE CLASS testtable (id_1 int,value_1 int);
 INSERT INTO testtable VALUES (1,10);
@@ -119,66 +272,460 @@ INSERT INTO testtable VALUES (10,100);
 
 select * from testtable;
 
+Expected output:
+|testtable.id_1      |testtable.value_1   |
+|1                   |10                  |
+|2                   |20                  |
+|3                   |30                  |
+|4                   |40                  |
+|5                   |50                  |
+|6                   |60                  |
+|7                   |70                  |
+|8                   |80                  |
+|9                   |90                  |
+|10                  |100                 |
+
 CREATE SELECTDEPUTY xiaomi AS (SELECT price, type FROM phone where brand ='xiaomi');
 CREATE SELECTDEPUTY huawei AS (SELECT price, type FROM phone where brand ='huawei');
 CREATE SELECTDEPUTY iphone AS (SELECT price, type FROM phone where brand ='iphone');
 
 # 查询代理类信息
 select * from xiaomi;
+
+Expected output:
+|xiaomi.price        |xiaomi.type         |
+|3799                |"Redmi K70 Pro"     |
+|2999                |"Civi 4 Pro"        |
+|1399                |"Redmi Note 13 Pro" |
+
 select * from huawei;
+
+Expected output:
+|huawei.price        |huawei.type         |
+|6499                |"Mate 60 Pro"       |
+|2499                |"nova 11"           |
+|3999                |"nova 12 Pro"       |
+|8999                |"Mate 60 Pro+"      |
+
 select * from iphone;
 
+Expected output:
+|iphone.price        |iphone.type         |
+|5799                |"iPhone 15 Plus"    |
+|9399                |"iPhone 15 ProMax"  |
+|5199                |"iPhone 15"         |
+|7399                |"iPhone 15 Pro"     |
+
 show ClassTable		// show 展示类表
+
+Expected output:
+| class name           | class id | attribute name       | attribute id | attribute type |
+| phone                | 7        | price                | 0            | int            |
+| phone                | 7        | brand                | 1            | String         |
+| phone                | 7        | type                 | 2            | String         |
+| testtable            | 8        | id_1                 | 0            | int            |
+| testtable            | 8        | value_1              | 1            | int            |
+| xiaomi               | 9        | price                | 0            | int            |
+| xiaomi               | 9        | type                 | 1            | String         |
+| huawei               | 10       | price                | 0            | int            |
+| huawei               | 10       | type                 | 1            | String         |
+| iphone               | 11       | price                | 0            | int            |
+| iphone               | 11       | type                 | 1            | String         |
+
 show DeputyTable		// show 展示源类和代理类的关系表
+
+Expected output:
+| origin class id      | deputy class id      |
+| 7                    | 9                    |
+| 7                    | 10                   |
+| 7                    | 11                   |
+
 show SwitchingTable		// show 展示源类和代理类之间指明属性的双向指针列表
+
+Expected output:
+| origin class id      | origin attribute id | origin attribute name | deputy class id | deputy attribute id | deputy attribute name |
+| 7                    | 0                   | price                 | 9               | 0                   | price                 |
+| 7                    | 2                   | type                  | 9               | 1                   | type                  |
+| 7                    | 0                   | price                 | 10              | 0                   | price                 |
+| 7                    | 2                   | type                  | 10              | 1                   | type                  |
+| 7                    | 0                   | price                 | 11              | 0                   | price                 |
+| 7                    | 2                   | type                  | 11              | 1                   | type                  |
 
 #############################################################################################
 
 #Task 3:测试
 Step1：带表达式的select实现（允许对函数逻辑进行重构）
 select * from phone;
+
+Expected output:
+|phone.price         |phone.brand         |phone.type          |
+|1399                |xiaomi              |"Redmi Note 13 Pro" |
+|2499                |huawei              |"nova 11"           |
+|2999                |xiaomi              |"Civi 4 Pro"        |
+|3799                |xiaomi              |"Redmi K70 Pro"     |
+|3999                |huawei              |"nova 12 Pro"       |
+|5199                |iphone              |"iPhone 15"         |
+|5799                |iphone              |"iPhone 15 Plus"    |
+|6499                |huawei              |"Mate 60 Pro"       |
+|7399                |iphone              |"iPhone 15 Pro"     |
+|8999                |huawei              |"Mate 60 Pro+"      |
+|9399                |iphone              |"iPhone 15 ProMax"  |
+
 select phone.* from phone, testtable;
+
+Expected output:
+|null.price          |null.brand          |null.type           |
+|1399                |xiaomi              |"Redmi Note 13 Pro" |
+|2499                |huawei              |"nova 11"           |
+|2999                |xiaomi              |"Civi 4 Pro"        |
+|3799                |xiaomi              |"Redmi K70 Pro"     |
+|3999                |huawei              |"nova 12 Pro"       |
+|5199                |iphone              |"iPhone 15"         |
+|5799                |iphone              |"iPhone 15 Plus"    |
+|6499                |huawei              |"Mate 60 Pro"       |
+|7399                |iphone              |"iPhone 15 Pro"     |
+|8999                |huawei              |"Mate 60 Pro+"      |
+|9399                |iphone              |"iPhone 15 ProMax"  |
+|1399                |xiaomi              |"Redmi Note 13 Pro" |
+|2499                |huawei              |"nova 11"           |
+|2999                |xiaomi              |"Civi 4 Pro"        |
+|3799                |xiaomi              |"Redmi K70 Pro"     |
+|3999                |huawei              |"nova 12 Pro"       |
+|5199                |iphone              |"iPhone 15"         |
+|5799                |iphone              |"iPhone 15 Plus"    |
+|6499                |huawei              |"Mate 60 Pro"       |
+|7399                |iphone              |"iPhone 15 Pro"     |
+|8999                |huawei              |"Mate 60 Pro+"      |
+|9399                |iphone              |"iPhone 15 ProMax"  |
+|1399                |xiaomi              |"Redmi Note 13 Pro" |
+|2499                |huawei              |"nova 11"           |
+|2999                |xiaomi              |"Civi 4 Pro"        |
+|3799                |xiaomi              |"Redmi K70 Pro"     |
+|3999                |huawei              |"nova 12 Pro"       |
+|5199                |iphone              |"iPhone 15"         |
+|5799                |iphone              |"iPhone 15 Plus"    |
+|6499                |huawei              |"Mate 60 Pro"       |
+|7399                |iphone              |"iPhone 15 Pro"     |
+|8999                |huawei              |"Mate 60 Pro+"      |
+|9399                |iphone              |"iPhone 15 ProMax"  |
+|1399                |xiaomi              |"Redmi Note 13 Pro" |
+|2499                |huawei              |"nova 11"           |
+|2999                |xiaomi              |"Civi 4 Pro"        |
+|3799                |xiaomi              |"Redmi K70 Pro"     |
+|3999                |huawei              |"nova 12 Pro"       |
+|5199                |iphone              |"iPhone 15"         |
+|5799                |iphone              |"iPhone 15 Plus"    |
+|6499                |huawei              |"Mate 60 Pro"       |
+|7399                |iphone              |"iPhone 15 Pro"     |
+|8999                |huawei              |"Mate 60 Pro+"      |
+|9399                |iphone              |"iPhone 15 ProMax"  |
+|1399                |xiaomi              |"Redmi Note 13 Pro" |
+|2499                |huawei              |"nova 11"           |
+|2999                |xiaomi              |"Civi 4 Pro"        |
+|3799                |xiaomi              |"Redmi K70 Pro"     |
+|3999                |huawei              |"nova 12 Pro"       |
+|5199                |iphone              |"iPhone 15"         |
+|5799                |iphone              |"iPhone 15 Plus"    |
+|6499                |huawei              |"Mate 60 Pro"       |
+|7399                |iphone              |"iPhone 15 Pro"     |
+|8999                |huawei              |"Mate 60 Pro+"      |
+|9399                |iphone              |"iPhone 15 ProMax"  |
+|1399                |xiaomi              |"Redmi Note 13 Pro" |
+|2499                |huawei              |"nova 11"           |
+|2999                |xiaomi              |"Civi 4 Pro"        |
+|3799                |xiaomi              |"Redmi K70 Pro"     |
+|3999                |huawei              |"nova 12 Pro"       |
+|5199                |iphone              |"iPhone 15"         |
+|5799                |iphone              |"iPhone 15 Plus"    |
+|6499                |huawei              |"Mate 60 Pro"       |
+|7399                |iphone              |"iPhone 15 Pro"     |
+|8999                |huawei              |"Mate 60 Pro+"      |
+|9399                |iphone              |"iPhone 15 ProMax"  |
+|1399                |xiaomi              |"Redmi Note 13 Pro" |
+|2499                |huawei              |"nova 11"           |
+|2999                |xiaomi              |"Civi 4 Pro"        |
+|3799                |xiaomi              |"Redmi K70 Pro"     |
+|3999                |huawei              |"nova 12 Pro"       |
+|5199                |iphone              |"iPhone 15"         |
+|5799                |iphone              |"iPhone 15 Plus"    |
+|6499                |huawei              |"Mate 60 Pro"       |
+|7399                |iphone              |"iPhone 15 Pro"     |
+|8999                |huawei              |"Mate 60 Pro+"      |
+|9399                |iphone              |"iPhone 15 ProMax"  |
+|1399                |xiaomi              |"Redmi Note 13 Pro" |
+|2499                |huawei              |"nova 11"           |
+|2999                |xiaomi              |"Civi 4 Pro"        |
+|3799                |xiaomi              |"Redmi K70 Pro"     |
+|3999                |huawei              |"nova 12 Pro"       |
+|5199                |iphone              |"iPhone 15"         |
+|5799                |iphone              |"iPhone 15 Plus"    |
+|6499                |huawei              |"Mate 60 Pro"       |
+|7399                |iphone              |"iPhone 15 Pro"     |
+|8999                |huawei              |"Mate 60 Pro+"      |
+|9399                |iphone              |"iPhone 15 ProMax"  |
+|1399                |xiaomi              |"Redmi Note 13 Pro" |
+|2499                |huawei              |"nova 11"           |
+|2999                |xiaomi              |"Civi 4 Pro"        |
+|3799                |xiaomi              |"Redmi K70 Pro"     |
+|3999                |huawei              |"nova 12 Pro"       |
+|5199                |iphone              |"iPhone 15"         |
+|5799                |iphone              |"iPhone 15 Plus"    |
+|6499                |huawei              |"Mate 60 Pro"       |
+|7399                |iphone              |"iPhone 15 Pro"     |
+|8999                |huawei              |"Mate 60 Pro+"      |
+|9399                |iphone              |"iPhone 15 ProMax"  |
+|1399                |xiaomi              |"Redmi Note 13 Pro" |
+|2499                |huawei              |"nova 11"           |
+|2999                |xiaomi              |"Civi 4 Pro"        |
+|3799                |xiaomi              |"Redmi K70 Pro"     |
+|3999                |huawei              |"nova 12 Pro"       |
+|5199                |iphone              |"iPhone 15"         |
+|5799                |iphone              |"iPhone 15 Plus"    |
+|6499                |huawei              |"Mate 60 Pro"       |
+|7399                |iphone              |"iPhone 15 Pro"     |
+|8999                |huawei              |"Mate 60 Pro+"      |
+|9399                |iphone              |"iPhone 15 ProMax"  |
 
 #测试点5，带表达式的select实现;
 select * from phone;
+
+Expected output:
+|phone.price         |phone.brand         |phone.type          |
+|1399                |xiaomi              |"Redmi Note 13 Pro" |
+|2499                |huawei              |"nova 11"           |
+|2999                |xiaomi              |"Civi 4 Pro"        |
+|3799                |xiaomi              |"Redmi K70 Pro"     |
+|3999                |huawei              |"nova 12 Pro"       |
+|5199                |iphone              |"iPhone 15"         |
+|5799                |iphone              |"iPhone 15 Plus"    |
+|6499                |huawei              |"Mate 60 Pro"       |
+|7399                |iphone              |"iPhone 15 Pro"     |
+|8999                |huawei              |"Mate 60 Pro+"      |
+|9399                |iphone              |"iPhone 15 ProMax"  |
+
 select price from phone;
+
+Expected output:
+|phone.price         |
+|1399                |
+|2499                |
+|2999                |
+|3799                |
+|3999                |
+|5199                |
+|5799                |
+|6499                |
+|7399                |
+|8999                |
+|9399                |
+
 select price,brand from phone;
+
+Expected output:
+|phone.price         |phone.brand         |
+|1399                |xiaomi              |
+|2499                |huawei              |
+|2999                |xiaomi              |
+|3799                |xiaomi              |
+|3999                |huawei              |
+|5199                |iphone              |
+|5799                |iphone              |
+|6499                |huawei              |
+|7399                |iphone              |
+|8999                |huawei              |
+|9399                |iphone              |
+
 select * from testtable;
+
+Expected output:
+|testtable.id_1      |testtable.value_1   |
+|1                   |10                  |
+|2                   |20                  |
+|3                   |30                  |
+|4                   |40                  |
+|5                   |50                  |
+|6                   |60                  |
+|7                   |70                  |
+|8                   |80                  |
+|9                   |90                  |
+|10                  |100                 |
+
 select id_1*2+value_1-id_1 from testtable;
+
+Expected output:
+|testtable.id_1 * 2 + value_1 - id_1|
+|11.0                |
+|22.0                |
+|33.0                |
+|44.0                |
+|55.0                |
+|66.0                |
+|77.0                |
+|88.0                |
+|99.0                |
+|110.0               |
+
 select id_1*2+value_1-id_1 as c from testtable;		//给他一个别名展示别名
+
+Expected output:
+|testtable.c         |
+|11.0                |
+|22.0                |
+|33.0                |
+|44.0                |
+|55.0                |
+|66.0                |
+|77.0                |
+|88.0                |
+|99.0                |
+|110.0               |
 
 #############################################################################################
 
 #测试点6，where子句的实现和where子句中or字段的实现，以及limit字段实现；
 select * from phone;
+
+Expected output:
+|phone.price         |phone.brand         |phone.type          |
+|1399                |xiaomi              |"Redmi Note 13 Pro" |
+|2499                |huawei              |"nova 11"           |
+|2999                |xiaomi              |"Civi 4 Pro"        |
+|3799                |xiaomi              |"Redmi K70 Pro"     |
+|3999                |huawei              |"nova 12 Pro"       |
+|5199                |iphone              |"iPhone 15"         |
+|5799                |iphone              |"iPhone 15 Plus"    |
+|6499                |huawei              |"Mate 60 Pro"       |
+|7399                |iphone              |"iPhone 15 Pro"     |
+|8999                |huawei              |"Mate 60 Pro+"      |
+|9399                |iphone              |"iPhone 15 ProMax"  |
+
 select price,type from phone where price > 7000;
+
+Expected output:
+|phone.price         |phone.type          |
+|9399                |"iPhone 15 ProMax"  |
+|7399                |"iPhone 15 Pro"     |
+|8999                |"Mate 60 Pro+"      |
+
 select * from phone where price <= 2999;
+
+Expected output:
+|phone.price         |phone.brand         |phone.type          |
+|2999                |xiaomi              |"Civi 4 Pro"        |
+|2499                |huawei              |"nova 11"           |
+|1399                |xiaomi              |"Redmi Note 13 Pro" |
+
 select * from phone where brand = 'xiaomi';				//字符检测
+
+Expected output:
+|phone.price         |phone.brand         |phone.type          |
+|3799                |xiaomi              |"Redmi K70 Pro"     |
+|2999                |xiaomi              |"Civi 4 Pro"        |
+|1399                |xiaomi              |"Redmi Note 13 Pro" |
+
 select * from xiaomi;
+
+Expected output:
+|xiaomi.price        |xiaomi.type         |
+|3799                |"Redmi K70 Pro"     |
+|2999                |"Civi 4 Pro"        |
+|1399                |"Redmi Note 13 Pro" |
 
 #limit 字段的查询
 select * from phone where price < 5000;
+
+Expected output:
+|phone.price         |phone.brand         |phone.type          |
+|3799                |xiaomi              |"Redmi K70 Pro"     |
+|2999                |xiaomi              |"Civi 4 Pro"        |
+|2499                |huawei              |"nova 11"           |
+|3999                |huawei              |"nova 12 Pro"       |
+|1399                |xiaomi              |"Redmi Note 13 Pro" |
+
 select * from phone where price < 5000 limit 0;
+
+Expected output:
+|phone.price         |phone.brand         |phone.type          |
+
 select * from phone where price < 5000 limit 3;
+
+Expected output:
+|phone.price         |phone.brand         |phone.type          |
+|3799                |xiaomi              |"Redmi K70 Pro"     |
+|2999                |xiaomi              |"Civi 4 Pro"        |
+|2499                |huawei              |"nova 11"           |
+
 select * from phone where price < 5000 limit 10;
 
+Expected output:
+|phone.price         |phone.brand         |phone.type          |
+|3799                |xiaomi              |"Redmi K70 Pro"     |
+|2999                |xiaomi              |"Civi 4 Pro"        |
+|2499                |huawei              |"nova 11"           |
+|3999                |huawei              |"nova 12 Pro"       |
+|1399                |xiaomi              |"Redmi Note 13 Pro" |
+
 #跨类查询
-select type from huawei,iphone where huawei.price >= 6000 and huawei.price <=iphone.price and iphone.type = '"iPhone 15 ProMax"';
-select * from phone;
-// 跨类查询：从手机类中选出华为价格大于6000块但是比iPhone 15 ProMax便宜的华为手机型号；
+select type, price from huawei,iphone where huawei.price >= 6000 and huawei.price <= iphone.price and iphone.type = '"iPhone 15 ProMax"';
+// 跨类查询：从手机类中选出华为价格大于等于6000块但是比iPhone 15 ProMax便宜的华为手机型号和价格
+
+Expected output:
+|huawei.type         |huawei.price        |
+|"Mate 60 Pro"       |6499                |
+|"Mate 60 Pro+"      |8999                |
+
+select * from phone where phone.type = '"iPhone 15 ProMax"';
+
+Expected output:
+|phone.price         |phone.brand         |phone.type          |
+|9399                |iphone              |"iPhone 15 ProMax"  |
 
 
 #############################################################################################
 #测试点7，delete语句实现；
 #单独删除；
 select * from phone;
+
+Expected output:
+|phone.price         |phone.brand         |phone.type          |
+|1399                |xiaomi              |"Redmi Note 13 Pro" |
+|2499                |huawei              |"nova 11"           |
+|2999                |xiaomi              |"Civi 4 Pro"        |
+|3799                |xiaomi              |"Redmi K70 Pro"     |
+|3999                |huawei              |"nova 12 Pro"       |
+|5199                |iphone              |"iPhone 15"         |
+|5799                |iphone              |"iPhone 15 Plus"    |
+|6499                |huawei              |"Mate 60 Pro"       |
+|7399                |iphone              |"iPhone 15 Pro"     |
+|8999                |huawei              |"Mate 60 Pro+"      |
+|9399                |iphone              |"iPhone 15 ProMax"  |
+
 delete from phone where price < 3000;
-delete from phone where price >7000 or price = 3799;
+delete from phone where price > 7000 or price = 3799;
+
+select * from phone;
+
+Expected output:
+|phone.price         |phone.brand         |phone.type          |
+|3999                |huawei              |"nova 12 Pro"       |
+|5199                |iphone              |"iPhone 15"         |
+|5799                |iphone              |"iPhone 15 Plus"    |
+|6499                |huawei              |"Mate 60 Pro"       |
+
 
 #代理类删除
 select * from huawei;
+
+Expected output:
+|huawei.price        |huawei.type         |
+|6499                |"Mate 60 Pro"       |
+|3999                |"nova 12 Pro"       |
+
 delete from phone where brand = 'huawei';
 select * from huawei;
+
+Expected output:
+|huawei.price        |huawei.type         |
 
 #############################################################################################
 
@@ -191,38 +738,145 @@ INSERT INTO student VALUES (d,2004);
 INSERT INTO student VALUES (e,2005);
 
 
-create class course (classname char,teacher char,classid int);
-INSERT INTO course VALUES (database1,aa,2001);
-INSERT INTO course VALUES (database2,bb,2002);
-INSERT INTO course VALUES (database3,cc,2003);
-INSERT INTO course VALUES (database6,dd,2006);
-INSERT INTO course VALUES (database7,ee,2007);
+create class course (classname char,teacherid int,classid int);
+INSERT INTO course VALUES (database1, 1, 2001);
+INSERT INTO course VALUES (database2, 2, 2002);
+INSERT INTO course VALUES (database3, 3, 2003);
+INSERT INTO course VALUES (database6, 4, 2006);
+INSERT INTO course VALUES (database7, 5, 2007);
+
+create class teacher (name char,teacherid int);
+INSERT INTO teacher VALUES ('Zhang San', 1);
+INSERT INTO teacher VALUES ('Li Si', 2);
+INSERT INTO teacher VALUES ('Wang Wu', 5);
 
 select * from student;
+
+Expected output:
+|student.name        |student.studentid   |
+|a                   |2001                |
+|b                   |2002                |
+|c                   |2003                |
+|d                   |2004                |
+|e                   |2005                |
+
 select * from course;
+
+Expected output:
+|course.classname    |course.teacherid    |course.classid      |
+|database1           |1                   |2001                |
+|database2           |2                   |2002                |
+|database3           |3                   |2003                |
+|database6           |4                   |2006                |
+|database7           |5                   |2007                |
+
+select * from teacher;
+
+Expected output:
+|teacher.name        |teacher.teacherid   |
+|'Zhang San'         |1                   |
+|'Li Si'             |2                   |
+|'Wang Wu'           |5                   |
 
 #测试点9：创建joindeputy代理类class：assistant；
 //把学生的id和课程中的classid一致的课程，老师和学生姓名和课程姓名选出来；即筛选选课id和课程id一致的人员信息；
 
-CREATE JOINDEPUTY courseandstudent as (select name,classname,teacher from student,course  where studentid = classid);
+CREATE JOINDEPUTY assistant as (select classname, teacher.name as teacher, student.name as student from student, course, teacher where studentid = classid and teacher.teacherid = course.teacherid);
+
+show deputytable;
 
 #测试点10：[在insert中进行更新迁移]
-select * from courseandstudent;
-INSERT INTO student VALUES (gg,2006);					// 新增了一名同学选了2006课程；
-INSERT INTO course VALUES (database4,ff,2004);			//新增了一门2004id的数据库课；
+select * from assistant;
+
+Expected output:
+|assistant.classname |assistant.teacher.name|assistant.student.name|
+|database1           |'Zhang San'           |a                     |
+|database2           |'Li Si'               |b                     |
+
+
+INSERT INTO student VALUES (gg, 2007);					// 新增了一名同学作为课程2007的助教；
+INSERT INTO course VALUES (database4,5,2004);			//新增了一门2004的数据库课；
+
+select * from assistant;
+
+Expected output:
+|courseandstudent.name|courseandstudent.classname|courseandstudent.teacher|
+|a                    |database1                 |aa                      |
+|b                    |database2                 |bb                      |
+|c                    |database3                 |cc                      |
+|gg                   |database6                 |dd                      |
+|d                    |database4                 |ff                      |
 
 
 #测试点11：[在update中进行更新迁移]
 CREATE SELECTDEPUTY studentes as (select name as newname,studentid as newid from student);
 
 select * from student;
+
+Expected output:
+|student.name        |student.studentid   |
+|a                   |2001                |
+|b                   |2002                |
+|c                   |2003                |
+|d                   |2004                |
+|e                   |2005                |
+|gg                  |2006                |
+
 select * from studentes;
+
+Expected output:
+|studentes.name      |studentes.studentid |
+|a                   |2001                |
+|b                   |2002                |
+|c                   |2003                |
+|d                   |2004                |
+|e                   |2005                |
+|gg                  |2006                |
+
 select * from courseandstudent;
+
+Expected output:
+|courseandstudent.name|courseandstudent.classname|courseandstudent.teacher|
+|a                   |database1           |aa                  |
+|b                   |database2           |bb                  |
+|c                   |database3           |cc                  |
+|gg                  |database6           |dd                  |
+|d                   |database4           |ff                  |
 
 #只修改代理类检查源类和其他代理类会不会被修改；
 UPDATE studentes SET studentid = 2007 WHERE studentid = 2001;
 
-UPDATE student SET studentid = 2006 WHERE studentid = 2001;
+select * from studentes;
 
-System.out.println("indexs"+indexs);
+Expected output:
+|studentes.name      |studentes.studentid |
+|a                   |2007                |
+|b                   |2002                |
+|c                   |2003                |
+|d                   |2004                |
+|e                   |2005                |
+|gg                  |2006                |
+
+select * from student;
+
+Expected output:
+|student.name        |student.studentid   |
+|a                   |2001                |
+|b                   |2002                |
+|c                   |2003                |
+|d                   |2004                |
+|e                   |2005                |
+|gg                  |2006                |
+
+select * from courseandstudent;
+
+Expected output:
+|courseandstudent.name|courseandstudent.classname|courseandstudent.teacher|
+|a                   |database1           |aa                  |
+|b                   |database2           |bb                  |
+|c                   |database3           |cc                  |
+|gg                  |database6           |dd                  |
+|d                   |database4           |ff                  |
+
+UPDATE student SET studentid = 2006 WHERE studentid = 2001;
 

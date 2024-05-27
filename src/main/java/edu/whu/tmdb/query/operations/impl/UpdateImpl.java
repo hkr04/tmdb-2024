@@ -106,7 +106,6 @@ public class UpdateImpl implements Update {
                 Tuple tuple = memConnect.GetTuple(biPointerTableItem.deputyobjectid);
                 deputyTupleList.addTuple(tuple);
             }
-
         }
 
         // 3.获取deputyTupleId->...的哈希映射列表
@@ -157,12 +156,12 @@ public class UpdateImpl implements Update {
                             Object[] nextUpdate = deputyId2UpdateValue.get(deputyId).toArray();
                             update(updateTupleList, nextIndexs, nextUpdate, deputyId);
                         }
-                    }
+                    } // End of Select Deputy
                     else if (deputyRule.equals("1")) { // Join Deputy
                         for (int deputyId : DeputyIdList) { // 遍历所有代理类id
                         String deputyDetailRule = memConnect.getDetailDeputyRule(deputyClassId); // 获取join的详细规则
-                        // 这里需要修改,应该先join， 然后再插入join的结果
-                        Integer anotherClassId = memConnect.getAnotherOriginID(deputyClassId, classId); // join的结果的另一个源类id
+                        // 这里需要修改,应该先 join， 然后再插入 join 的结果
+                        Integer anotherClassId = memConnect.getAnotherOriginID(deputyClassId, classId); // join 的结果的其它源类 id
                         List<Tuple> deputyTupleList2 = getDeputyJoinTupleList(classId, tupleList, anotherClassId, select,deputyDetailRule); // 获取join的结果
                         
                         TupleList updateTupleList = new TupleList();
@@ -177,8 +176,7 @@ public class UpdateImpl implements Update {
                             Object[] nextUpdate = deputyId2UpdateValue.get(deputyId).toArray();
                             update(updateTupleList, nextIndexs, nextUpdate, deputyId);
                         }
-                    }
-
+                    } // End of Join Deputy
                 }
             }
 

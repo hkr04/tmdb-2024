@@ -79,7 +79,7 @@ public class DeleteImpl implements Delete {
                 List<Integer> deputyTupleIdList = new ArrayList<>(); // 需要删除的元组，递归删除
                 List<BiPointerTableItem> biPointerTableList = MemConnect.getBiPointerTable().biPointerTableList;
 
-                for (int i = 0; i< biPointerTableList.size();i++){
+                for (int i = 0; i < biPointerTableList.size();i++){
                     BiPointerTableItem biPointerTableItem = biPointerTableList.get(i);
                     if (biPointerTableItem.classid == classId
                             && biPointerTableItem.objectid == tupleid

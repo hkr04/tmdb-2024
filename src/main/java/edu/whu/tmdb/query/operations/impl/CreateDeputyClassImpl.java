@@ -14,6 +14,9 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.stream.Collectors;
+
+import org.apache.commons.lang3.ObjectUtils.Null;
+
 import java.util.HashSet;
 import java.util.List;
 
@@ -73,12 +76,11 @@ public class CreateDeputyClassImpl implements CreateDeputyClass {
      * @return
      */
     private int getOriAttrId(int oriId, String alias) {
-        
         for (int i = 0; i < MemConnect.getClassTable().classTableList.size(); i++) {
             ClassTableItem classTableItem = MemConnect.getClassTable().classTableList.get(i);
-            if(classTableItem.classid==oriId && classTableItem.attrname.equals(alias)){
+            if (classTableItem.classid == oriId 
+            && (alias.equals(classTableItem.attrname) || alias.equals(classTableItem.classname+"."+classTableItem.attrname))) {
                 return classTableItem.attrid;
-                
             }
         }
         return -1;
