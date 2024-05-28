@@ -737,7 +737,6 @@ INSERT INTO student VALUES (c,2003);
 INSERT INTO student VALUES (d,2004);
 INSERT INTO student VALUES (e,2005);
 
-
 create class course (classname char,teacherid int,classid int);
 INSERT INTO course VALUES (database1, 1, 2001);
 INSERT INTO course VALUES (database2, 2, 2002);
@@ -746,9 +745,9 @@ INSERT INTO course VALUES (database6, 4, 2006);
 INSERT INTO course VALUES (database7, 5, 2007);
 
 create class teacher (name char,teacherid int);
-INSERT INTO teacher VALUES ('Zhang San', 1);
-INSERT INTO teacher VALUES ('Li Si', 2);
-INSERT INTO teacher VALUES ('Wang Wu', 5);
+INSERT INTO teacher VALUES (ZhangSan, 1);
+INSERT INTO teacher VALUES (LiSi, 2);
+INSERT INTO teacher VALUES (WangWu, 5);
 
 select * from student;
 
@@ -774,24 +773,22 @@ select * from teacher;
 
 Expected output:
 |teacher.name        |teacher.teacherid   |
-|'Zhang San'         |1                   |
-|'Li Si'             |2                   |
-|'Wang Wu'           |5                   |
+|ZhangSan            |1                   |
+|LiSi                |2                   |
+|WangWu              |5                   |
 
 #测试点9：创建joindeputy代理类class：assistant；
 //把学生的id和课程中的classid一致的课程，老师和学生姓名和课程姓名选出来；即筛选选课id和课程id一致的人员信息；
 
-CREATE JOINDEPUTY assistant as (select classname, teacher.name as teacher, student.name as student from student, course, teacher where studentid = classid and teacher.teacherid = course.teacherid);
-
-show deputytable;
+CREATE JOINDEPUTY assistant as (select classname, teacher.name as teacher, student.name as student from student, teacher, course where studentid = classid and teacher.teacherid = course.teacherid);
 
 #测试点10：[在insert中进行更新迁移]
 select * from assistant;
 
 Expected output:
 |assistant.classname |assistant.teacher.name|assistant.student.name|
-|database1           |'Zhang San'           |a                     |
-|database2           |'Li Si'               |b                     |
+|database2           |LiSi                 |b                   |
+|database1           |ZhangSan             |a                   |
 
 
 INSERT INTO student VALUES (gg, 2007);					// 新增了一名同学作为课程2007的助教；
@@ -800,12 +797,28 @@ INSERT INTO course VALUES (database4,5,2004);			//新增了一门2004的数据�
 select * from assistant;
 
 Expected output:
-|courseandstudent.name|courseandstudent.classname|courseandstudent.teacher|
-|a                    |database1                 |aa                      |
-|b                    |database2                 |bb                      |
-|c                    |database3                 |cc                      |
-|gg                   |database6                 |dd                      |
-|d                    |database4                 |ff                      |
+|assistant.classname |assistant.teacher.name|assistant.student.name|
+|database2           |LiSi                  |b                     |
+|database1           |ZhangSan              |a                     |
+|database7           |WangWu                |gg                    |
+|database4           |WangWu                |d                     |
+
+delete from teacher where teacherid=5; // WangWu - 5
+
+select * from assistant;
+
+Expected output:
+|assistant.classname |assistant.teacher.name|assistant.student.name|
+|database2           |LiSi                  |b                   |
+|database1           |ZhangSan              |a                   |
+
+delete from teacher where name='LiSi';
+
+select * from assistant;
+
+Expected output:
+|assistant.classname |assistant.teacher.name|assistant.student.name|
+|database1           |ZhangSan              |a                     |
 
 
 #测试点11：[在update中进行更新迁移]

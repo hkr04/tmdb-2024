@@ -71,14 +71,19 @@ public class Formula {
     public ArrayList<Object> column(Column column, SelectResult selectResult) throws TMDBException {
         // 获取columnName
         String columnName = column.getColumnName();
+        String aliasName = column.getName(true);
+        // System.out.println(columnName + "===" );
         int index = -1;
         // 找到这个column在selectResult中的对应index，在原始名和别名中都要进行寻找。
+        // for (int i = 0; i < selectResult.getClassName().length; i++) {
+        //     System.out.println(selectResult.getClassName()[i] + "---" + selectResult.getAttrname()[i]);
+        // }
         for (int i = 0; i < selectResult.getClassName().length; i++) {
-            if (!selectResult.getAttrname()[i].equals(columnName)) {
+            if (!selectResult.getAttrname()[i].equals(columnName) && !selectResult.getAlias()[i].equals(aliasName)) {
                 continue;
             }
-            if (column.getTable() == null || column.getTable().getName().equals(selectResult.getClassName()[i])
-                    || column.getTable().getName().equals(selectResult.getAlias()[i])) {
+            // System.out.println("!!!" + selectResult.getClassName()[i] + "---" + selectResult.getAttrname()[i]);
+            if (column.getTable() == null || column.getTable().getName().equals(selectResult.getClassName()[i])) {
                 index = i;
                 break;
             }
@@ -88,7 +93,9 @@ public class Formula {
         }
         ArrayList<Object> dataList = new ArrayList<>();
         String type = selectResult.getType()[index];
+        // System.out.println("Type: "+type);
         for (Tuple tuple : selectResult.getTpl().tuplelist) {
+            // System.out.println(tuple.tuple[index]);
             addToDataList(dataList, type, tuple.tuple[index]);
         }
         return dataList;

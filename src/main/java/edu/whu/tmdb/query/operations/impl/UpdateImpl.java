@@ -161,7 +161,7 @@ public class UpdateImpl implements Update {
                         for (int deputyId : DeputyIdList) { // 遍历所有代理类id
                         String deputyDetailRule = memConnect.getDetailDeputyRule(deputyClassId); // 获取join的详细规则
                         // 这里需要修改,应该先 join， 然后再插入 join 的结果
-                        Integer anotherClassId = memConnect.getAnotherOriginID(deputyClassId, classId); // join 的结果的其它源类 id
+                        List<Integer> anotherClassId = memConnect.getAnotherOriginID(deputyClassId, classId); // join 的结果的其它源类 id
                         List<Tuple> deputyTupleList2 = getDeputyJoinTupleList(classId, tupleList, anotherClassId, select,deputyDetailRule); // 获取join的结果
                         
                         TupleList updateTupleList = new TupleList();
@@ -184,14 +184,14 @@ public class UpdateImpl implements Update {
 
     }
 
-    public List<Tuple> getDeputyJoinTupleList(int thisClassID, TupleList tuplelist, int anotherClassId, SelectImpl select,String DeputyDetailRule) throws TMDBException {
+    public List<Tuple> getDeputyJoinTupleList(int thisClassID, TupleList tuplelist, List<Integer> anotherClassId, SelectImpl select,String DeputyDetailRule) throws TMDBException {
         List<Tuple> deputyInsertTupleList = new ArrayList<>(); //Result
 
         //获取另外一个类的所有Tuple->SelectResult
         TupleList anothertuple = new TupleList();
         List<ObjectTableItem> objs= MemConnect.getObjectTableList();
         for (ObjectTableItem obj : objs) {
-            if (obj.classid == anotherClassId) {
+            if (anotherClassId.contains(obj.classid)) {
                 anothertuple.addTuple(memConnect.GetTuple(obj.tupleid));
             }
         }
@@ -232,6 +232,29 @@ public class UpdateImpl implements Update {
         return deputyInsertTupleList;
     }
 
+    private SelectResult getSelectResultInformation(List<Integer> thisClassID, List<ClassTableItem> classTableItems, TupleList thisTupleList) {
+        List<String> thisClassName = new ArrayList<>();     // 字段所属的类名
+        List<String> thisAttrname = new ArrayList<>();      // 字段名
+        List<String> thisAlias = new ArrayList<>();         // 字段的别名，在进行select时会用到
+        List<Integer> thisAttrid = new ArrayList<>();       // 显示时使用
+        List<String> thisType = new ArrayList<>();          // 字段数据类型(char, int)
+        for (ClassTableItem item : classTableItems) {
+            if (thisClassID.contains(item.classid)) {
+                thisClassName.add(item.classname);
+                thisAttrname.add(item.attrname);
+                thisAlias.add(item.alias);
+                thisAttrid.add(item.attrid);
+                thisType.add(item.attrtype);
+            }
+        }
+        SelectResult thisResult = new SelectResult(thisTupleList,
+                thisClassName.toArray(new String[0]),
+                thisAttrname.toArray(new String[0]),
+                thisAlias.toArray(new String[0]),
+                thisAttrid.stream().mapToInt(i->i).toArray(),
+                thisType.toArray(new String[0]));
+        return thisResult;
+    }
     private SelectResult getSelectResultInformation(int thisClassID, List<ClassTableItem> classTableItems, TupleList thisTupleList) {
         List<String> thisClassName = new ArrayList<>();     // 字段所属的类名
         List<String> thisAttrname = new ArrayList<>();      // 字段名

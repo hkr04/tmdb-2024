@@ -45,6 +45,7 @@ public class DeleteImpl implements Delete {
         if (where != null) {
             sql += " where " + String.valueOf(where) + ";";
         }
+        // System.out.println(sql);
         ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(sql.getBytes());
         net.sf.jsqlparser.statement.select.Select parse = (net.sf.jsqlparser.statement.select.Select) CCJSqlParserUtil.parse(byteArrayInputStream);
         Select select = new SelectImpl();
@@ -65,7 +66,6 @@ public class DeleteImpl implements Delete {
     public void delete(int classId, Integer tupleid) throws TMDBException, IOException {
         //1. Delete tuples from objtable
         List<ObjectTableItem> objlist = MemConnect.getObjectTableItemByTuple(tupleid);
-        List<Integer> objidlist = new ArrayList<>();
 
         MemConnect.getObjectTable().objectTableList.removeAll(objlist);
         //2. Delete tuples
@@ -73,33 +73,36 @@ public class DeleteImpl implements Delete {
 
         //3. Recursively delete tuples from deputy classes and biPointerTable
         ArrayList<Integer> DeputyIdList = memConnect.getDeputyIdList(classId);
+        // System.out.println("Origin: "+classId+"("+tupleid+")");
         if (!DeputyIdList.isEmpty()) {
             for (int deputyClassId : DeputyIdList) {
+                // System.out.println("Deputy: "+deputyClassId);
                 //choose all deputy tuple id from biPointerTable
                 List<Integer> deputyTupleIdList = new ArrayList<>(); // 需要删除的元组，递归删除
                 List<BiPointerTableItem> biPointerTableList = MemConnect.getBiPointerTable().biPointerTableList;
-
+                List<BiPointerTableItem> temp = new ArrayList<>(); // 需要删除的指针
                 for (int i = 0; i < biPointerTableList.size();i++){
                     BiPointerTableItem biPointerTableItem = biPointerTableList.get(i);
                     if (biPointerTableItem.classid == classId
                             && biPointerTableItem.objectid == tupleid
                             && biPointerTableItem.deputyid == deputyClassId) {
                         deputyTupleIdList.add(biPointerTableItem.deputyobjectid);//add deputy tuple id
-                        biPointerTableList.remove(i);//delete from biPointerTable
-                        i--;
+                        
                     }
                 }
 
-               for (BiPointerTableItem biPointerTableItem : biPointerTableList) {
-                   if (biPointerTableItem.classid == classId
-                           && biPointerTableItem.objectid == tupleid
-                           && biPointerTableItem.deputyid == deputyClassId) {
-                       deputyTupleIdList.add(biPointerTableItem.deputyobjectid);//add deputy tuple id
-                       MemConnect.getBiPointerTable().biPointerTableList.remove(biPointerTableItem);//delete from biPointerTable
-                   }
-               }
+                for (int i = 0; i < biPointerTableList.size();i++){
+                    BiPointerTableItem biPointerTableItem = biPointerTableList.get(i);
+                    if (deputyTupleIdList.contains(biPointerTableItem.deputyobjectid)) {
+                        temp.add(biPointerTableItem);
+                    }
+                }
 
-                if(!deputyTupleIdList.isEmpty()){
+                for (BiPointerTableItem biPointerTableItem : temp) {
+                    biPointerTableList.remove(biPointerTableItem);//delete from biPointerTable
+                }
+
+                if (!deputyTupleIdList.isEmpty()){
                     for (Integer deputyTupleId : deputyTupleIdList) {
                         delete(deputyClassId, deputyTupleId);
                     }

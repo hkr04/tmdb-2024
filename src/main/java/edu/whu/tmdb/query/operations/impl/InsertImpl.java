@@ -12,11 +12,15 @@ import net.sf.jsqlparser.statement.select.SelectBody;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import edu.whu.tmdb.query.operations.Exception.ErrorList;
 import edu.whu.tmdb.query.operations.Exception.TMDBException;
+import edu.whu.tmdb.query.operations.CreateDeputyClass;
 import edu.whu.tmdb.query.operations.Insert;
 import edu.whu.tmdb.query.operations.utils.MemConnect;
 import edu.whu.tmdb.query.operations.utils.SelectResult;
@@ -74,31 +78,13 @@ public class InsertImpl implements Insert {
         int attrNum = memConnect.getClassAttrnum(tableName);    // 属性的数量
         int[] attrIdList = memConnect.getAttridList(classId, columns); // 插入的属性对应的attrid列表
 
-        TupleList allTuples = memConnect.getTupleList(classId);
-        List<Tuple> existingTuples  = tupleList.tuplelist;
-
-        for (Tuple tuple : existingTuples) {
-            if (tuple.tuple.length != columns.size()) {
+        for (Tuple tuple : tupleList.tuplelist) {
+            if (tuple.tuple.length != columns.size()){
                 throw new TMDBException(/*"Insert error: columns size doesn't match tuple size"*/);
             }
-            // 检查当前元组是否已存在于数据库中
-            boolean tupleExists = false;
-            for (Tuple dbTuple : allTuples.tuplelist) {
-                if (tuple.equals(dbTuple)) {
-                    tupleExists = true;
-                    break;
-                }
-            }
-            // 如果元组不存在于数据库中，则插入
-            if (!tupleExists) {
-                tupleIdList.add(insert(classId, columns, tuple, attrNum, attrIdList));
-            } else {
-                 // 处理重复元组的情况，例如记录日志或抛出异常
-                throw new TMDBException(ErrorList.SAME_TUPLE_ALREADY_EXISTS, "No qualified tuple: " + tuple);
-            }
+            tupleIdList.add(insert(classId, columns, tuple, attrNum, attrIdList));
         }
     }
-
     
 
     /**
@@ -157,6 +143,15 @@ public class InsertImpl implements Insert {
         }
         tuple.setTuple(tuple.tuple.length, tupleid, classId, temp);
 
+        TupleList allTuples = memConnect.getTupleList(classId);
+
+        for (Tuple dbTuple : allTuples.tuplelist) {
+            if (tuple.equals(dbTuple)) { // 已存在
+                throw new TMDBException(ErrorList.SAME_TUPLE_ALREADY_EXISTS);
+            }
+        }
+        
+
         // 1.3 元组插入操作
         memConnect.InsertTuple(tuple);
         MemConnect.getObjectTableList().add(new ObjectTableItem(classId, tupleid));
@@ -185,22 +180,60 @@ public class InsertImpl implements Insert {
 
                     else if(deputyRule.equals("1")){ //Join Deputy
                         String deputyDetailRule = memConnect.getDetailDeputyRule(deputyClassId);    // 获取join的详细规则
-                        // 这里需要修改,应该先join， 然后再插入join的结果
-                        List<String> deputyColumns = memConnect.getColumns(deputyClassId);    // join的结果的属性名列表
-                        Integer anotherClassId = memConnect.getAnotherOriginID(deputyClassId, classId);    // join的结果的另一个源类id
-                        List<Tuple> deputyTupleList = getDeputyJoinTupleList(classId,tuple, anotherClassId,select,deputyDetailRule);    // 获取join的结果
-                        for (Tuple deputyTuple : deputyTupleList) {
-                            int DeputyTupleId = execute(deputyClassId, deputyColumns, deputyTuple);
-                            MemConnect.getBiPointerTableList().add(new BiPointerTableItem(classId, tupleid, deputyClassId, DeputyTupleId));
-                            //MemConnect.getBiPointerTableList().add(new BiPointerTableItem(anotherClassId, tupleid, deputyClassId, DeputyTupleId));
-                        }
+                        List<Integer> anotherClassId = memConnect.getAnotherOriginID(deputyClassId, classId);    // join的结果的其它源类id
+                        SelectResult selectResult = getDeputyJoinSelectResult(classId, tuple, anotherClassId, select, deputyDetailRule);    // 获取join的结果
+                        createBiPointerTableItem(selectResult, deputyClassId);
                     }
-
                 }
             }
 
         }
         return tupleid;
+    }
+
+    /**
+     * 插入元组，并新建BiPointerTableItem
+     * @param selectResult 插入的元组列表
+     * @param deputyId 新建代理类id
+     */
+    private void createBiPointerTableItem(SelectResult selectResult, int deputyId) throws TMDBException, IOException {
+        // 使用MemConnect.getBiPointerTableList().add()插入BiPointerTable
+        // 1. Insert each item in the selectResult
+        TupleList tpl=selectResult.getTpl();
+        InsertImpl insert=new InsertImpl();
+        List<String> columns= Arrays.asList(selectResult.getAttrname());
+
+        for (int i = 0; i < tpl.tuplelist.size(); i++) {
+            Tuple tuple=selectResult.getTpl().tuplelist.get(i);
+            // 使用insert.execute()插入对象
+            try {
+                int deputyTupleId = insert.execute(deputyId, columns, new Tuple(tuple.tuple));
+                // 可调用getOriginClass(selectResult);
+                HashSet<Integer> origin = getOriginClass(selectResult);
+                for (int origin_index :origin) {
+                    int classId=memConnect.getClassId(selectResult.getClassName()[origin_index]);
+                    int oriTupleId=tuple.tupleIds[origin_index];
+                    // System.out.println(deputyId);
+                    // System.out.println(deputyTupleId);
+                    MemConnect.getBiPointerTableList().add(
+                            new BiPointerTableItem(classId,oriTupleId,deputyId,deputyTupleId)
+                    );
+                }
+            } catch (TMDBException e) {
+                ;
+            }
+           
+        }
+    }
+
+    private HashSet<Integer> getOriginClass(SelectResult selectResult) {
+        ArrayList<String> collect = Arrays.stream(selectResult.getClassName()).collect(Collectors.toCollection(ArrayList::new));
+        HashSet<String> collect1 = Arrays.stream(selectResult.getClassName()).collect(Collectors.toCollection(HashSet::new));
+        HashSet<Integer> res = new HashSet<>();
+        for (String s : collect1) {
+            res.add(collect.indexOf(s));
+        }
+        return res;
     }
 
     /**
@@ -210,25 +243,28 @@ public class InsertImpl implements Insert {
      * @return The list of joined tuples
      * @throws TMDBException If no class is found with the given id, throw an exception
      */
-    public List<Tuple> getDeputyJoinTupleList(int thisClassID,Tuple tuple, int anotherClassId, SelectImpl select,String DeputyDetailRule) throws TMDBException {
-        List<Tuple> deputyInsertTupleList = new ArrayList<>(); //Result
-
-        //获取另外一个类的所有Tuple->SelectResult
-        TupleList anothertuple = new TupleList();
+    public SelectResult getDeputyJoinSelectResult(int thisClassID, Tuple tuple, List<Integer> anotherClassId, SelectImpl select,String DeputyDetailRule) throws TMDBException {
+        //获取其它类的所有Tuple->SelectResult
         List<ObjectTableItem> objs= MemConnect.getObjectTableList();
+        HashMap<Integer, TupleList> anotherTuple = new HashMap<>();
+        for (int classId : anotherClassId) {
+            anotherTuple.put(classId, new TupleList());
+        }
         for (ObjectTableItem obj : objs) {
-            if (obj.classid == anotherClassId) {
-                anothertuple.addTuple(memConnect.GetTuple(obj.tupleid));
+            if (anotherClassId.contains(obj.classid)) {
+                anotherTuple.get(obj.classid).addTuple(memConnect.GetTuple(obj.tupleid));
             }
         }
         List<ClassTableItem> classTableItems = memConnect.getClassTableList(); // Assuming this method returns a list of all class table entries
-        SelectResult  right = getSelectResultInformation(anotherClassId, classTableItems, anothertuple);
-
+        List<SelectResult> right = new ArrayList<>();
+        for (int i = 0; i < anotherClassId.size(); i++) {
+            TupleList anotherTupleList = anotherTuple.get(anotherClassId.get(i));
+            right.add(getSelectResultInformation(anotherClassId.get(i), classTableItems, anotherTupleList));
+        }
         //构建本类的SelectResult
         TupleList thisTupleList = new TupleList();
         thisTupleList.addTuple(tuple);
-        SelectResult  left =  getSelectResultInformation(thisClassID, classTableItems, thisTupleList);
-
+        SelectResult left =  getSelectResultInformation(thisClassID, classTableItems, thisTupleList);
         SelectImpl selectImpl = new SelectImpl();
         try {
             ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(DeputyDetailRule.getBytes());
@@ -236,16 +272,19 @@ public class InsertImpl implements Insert {
             SelectBody selectBody = ((net.sf.jsqlparser.statement.select.Select)stmt).getSelectBody();
             PlainSelect plainSelect = (PlainSelect) selectBody;
             ArrayList<ClassTableItem> leftClassTableItemList = memConnect.copyClassTableList(left.getClassName()[0]);
-            ArrayList<ClassTableItem> rightClassTableItemList = memConnect.copyClassTableList(right.getClassName()[0]);
-            leftClassTableItemList.addAll(rightClassTableItemList);
-            if(!(plainSelect.getJoins() == null)){
-                for (Join join:plainSelect.getJoins()) {
-                    TupleList tupleList = selectImpl.join(left,right,join);
-                    deputyInsertTupleList = tupleList.tuplelist;
-                    left=select.getSelectResult(leftClassTableItemList, tupleList);
+            for (int i = 0; i < right.size(); i++) {
+                ArrayList<ClassTableItem> rightClassTableItemList = memConnect.copyClassTableList(right.get(i).getClassName()[0]);
+                leftClassTableItemList.addAll(rightClassTableItemList);
+            }
+            if (plainSelect.getJoins() != null) {
+                for (Join join : plainSelect.getJoins()) {
+                    for (int i = 0; i < right.size(); i++) {
+                        TupleList tupleList = selectImpl.join(left, right.get(i), join);
+                        left = select.getSelectResult(leftClassTableItemList, tupleList);
+                    }
                 }
             }
-            if (plainSelect.getWhere() != null){
+            if (plainSelect.getWhere() != null)  {
                 Where where = new Where();
                 left = where.where(plainSelect, left);
             }
@@ -256,8 +295,7 @@ public class InsertImpl implements Insert {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        deputyInsertTupleList = left.getTpl().tuplelist;
-        return deputyInsertTupleList;
+        return left;
     }
 
     private SelectResult getSelectResultInformation(int thisClassID, List<ClassTableItem> classTableItems, TupleList thisTupleList) {
@@ -267,7 +305,7 @@ public class InsertImpl implements Insert {
         List<Integer> thisAttrid = new ArrayList<>();       // 显示时使用
         List<String> thisType = new ArrayList<>();          // 字段数据类型(char, int)
         for (ClassTableItem item : classTableItems) {
-            if (item.classid == thisClassID) {
+            if (thisClassID == item.classid) {
                 thisClassName.add(item.classname);
                 thisAttrname.add(item.attrname);
                 thisAlias.add(item.alias);

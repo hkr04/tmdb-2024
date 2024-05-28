@@ -366,11 +366,9 @@ public class MemConnect {
     public ArrayList<Integer> getDeputyIdList(int classId) throws TMDBException {
         List<DeputyTableItem> deputyTableItems = getDeputyTableList(); // Assuming this method returns a list of all deputy table entries
         ArrayList<Integer> deputyIds = new ArrayList<>();
-        boolean found = false;
         for (DeputyTableItem item : deputyTableItems) {
             if (item.originid == classId) {
                 deputyIds.add(item.deputyid);
-                found = true;
             }
         }
         return deputyIds;
@@ -401,18 +399,21 @@ public class MemConnect {
      * Given an originId and a deputyId, get the corresponding deputyId
      * @param originId1 The id of the origin class
      * @param deputyId The id of the deputy class
-     * @return The deputy class of the given originId
+     * @return The deputy class(s) of the given originId
      * @throws TMDBException If no deputy class is found with the given id, throw an exception
      */
-    public Integer getAnotherOriginID(int deputyId, int originId1) throws TMDBException {
+    public List<Integer> getAnotherOriginID(int deputyId, int originId1) throws TMDBException {
         List<DeputyTableItem> deputyTableItems = getDeputyTableList(); // Assuming this method returns a list of all deputy table entries
+        List<Integer> OtherOriginIDs = new ArrayList<>();
         for (DeputyTableItem item : deputyTableItems) {
             if (item.deputyid == deputyId && item.originid != originId1) {
-                return item.originid; // Return the origin class for the deputy class
+                OtherOriginIDs.add(item.originid);
             }
         }
         // If no deputy class is found with the provided ID, throw an exception
-        throw new TMDBException(ErrorList.DEPUTY_ID_DOES_NOT_EXIST,"No deputy class found with ID: " + deputyId);
+        if (OtherOriginIDs.isEmpty())
+            throw new TMDBException(ErrorList.DEPUTY_ID_DOES_NOT_EXIST,"No deputy class found with ID: " + deputyId);
+        return OtherOriginIDs;
     }
 
     /**

@@ -671,50 +671,52 @@ public class SelectImpl implements edu.whu.tmdb.query.operations.Select {
         // 获取onExpression的表达式list（可以有多个on，但是这里只实现了一个的）
         LinkedList<Expression> expressionLinkedList = (LinkedList<Expression>) join.getOnExpressions();
         if (!expressionLinkedList.isEmpty()) {
-            // 默认只有一个onExpression 且为等于
-            EqualsTo equals = (EqualsTo) expressionLinkedList.get(0);
-            // 获取等于表达式的左边
-            Column leftExpression = (Column) equals.getLeftExpression();
-            // 获取等于表达式的右边
-            Column rightExpression = (Column) equals.getRightExpression();
-            // 获取等于表达式的左表达式和右表达式在分别selectresult中的index。例如test.a=company.b 获取a和b在各自表的index
-            int leftIndex = -1;
-            int rightIndex = -1;
-            for (int i = 0; i < left.getAttrname().length; i++) {
-                if (leftExpression.getColumnName().equals(left.getAttrname()[i])) {
-                    leftIndex = i;
-                    break;
+            for (int j = 0; j < expressionLinkedList.size(); j++) {
+                // 默认为等于
+                EqualsTo equals = (EqualsTo) expressionLinkedList.get(j);
+                // 获取等于表达式的左边
+                Column leftExpression = (Column) equals.getLeftExpression();
+                // 获取等于表达式的右边
+                Column rightExpression = (Column) equals.getRightExpression();
+                // 获取等于表达式的左表达式和右表达式在分别selectresult中的index。例如test.a=company.b 获取a和b在各自表的index
+                int leftIndex = -1;
+                int rightIndex = -1;
+                for (int i = 0; i < left.getAttrname().length; i++) {
+                    if (leftExpression.getColumnName().equals(left.getAttrname()[i])) {
+                        leftIndex = i;
+                        break;
+                    }
                 }
-            }
-            if (leftIndex == -1)
-                throw new TMDBException(ErrorList.COLUMN_NAME_DOES_NOT_EXIST, leftExpression.getColumnName());
-            for (int i = 0; i < right.getAttrname().length; i++) {
-                if (rightExpression.getColumnName().equals(right.getAttrname()[i])) {
-                    rightIndex = i;
-                    break;
+                if (leftIndex == -1)
+                    throw new TMDBException(ErrorList.COLUMN_NAME_DOES_NOT_EXIST, leftExpression.getColumnName());
+                for (int i = 0; i < right.getAttrname().length; i++) {
+                    if (rightExpression.getColumnName().equals(right.getAttrname()[i])) {
+                        rightIndex = i;
+                        break;
+                    }
                 }
-            }
-            if (rightIndex == -1)
-                throw new TMDBException(ErrorList.COLUMN_NAME_DOES_NOT_EXIST, rightExpression.getColumnName());
-            // innerJoin
-            if (join.isNatural() || join.isInner()) {
-                leftTupleList = naturalJoin(leftTupleList, rightTupleList, leftIndex, rightIndex);
-            }
-            // leftJoin
-            else if (join.isLeft()) {
-                leftTupleList = leftJoin(leftTupleList, rightTupleList, leftIndex, rightIndex);
-            }
-            // rightJoin
-            else if (join.isRight()) {
-                leftTupleList = rightJoin(leftTupleList, rightTupleList, leftIndex, rightIndex);
-            }
-            // outerJoin
-            else if (join.isOuter()) {
-                leftTupleList = outerJoin(leftTupleList, rightTupleList, leftIndex, rightIndex);
-            }
-            // naturalJoin
-            else if (join.isNatural()) {
-                leftTupleList = naturalJoin(leftTupleList, rightTupleList, leftIndex, rightIndex);
+                if (rightIndex == -1)
+                    throw new TMDBException(ErrorList.COLUMN_NAME_DOES_NOT_EXIST, rightExpression.getColumnName());
+                // innerJoin
+                if (join.isNatural() || join.isInner()) {
+                    leftTupleList = naturalJoin(leftTupleList, rightTupleList, leftIndex, rightIndex);
+                }
+                // leftJoin
+                else if (join.isLeft()) {
+                    leftTupleList = leftJoin(leftTupleList, rightTupleList, leftIndex, rightIndex);
+                }
+                // rightJoin
+                else if (join.isRight()) {
+                    leftTupleList = rightJoin(leftTupleList, rightTupleList, leftIndex, rightIndex);
+                }
+                // outerJoin
+                else if (join.isOuter()) {
+                    leftTupleList = outerJoin(leftTupleList, rightTupleList, leftIndex, rightIndex);
+                }
+                // naturalJoin
+                else if (join.isNatural()) {
+                    leftTupleList = naturalJoin(leftTupleList, rightTupleList, leftIndex, rightIndex);
+                }
             }
         } else {
             // 如果没有join的话，直接进行拼接
