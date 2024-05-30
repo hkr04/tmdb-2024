@@ -72,6 +72,18 @@ public class DeleteImpl implements Delete {
         memConnect.DeleteTuple(tupleid);
 
         //3. Recursively delete tuples from deputy classes and biPointerTable
+        List<BiPointerTableItem> temp = new ArrayList<>(); // 需要删除的指针
+        List<BiPointerTableItem> biPointerTableList = MemConnect.getBiPointerTable().biPointerTableList;
+        for (int i = 0; i < biPointerTableList.size();i++){
+            BiPointerTableItem biPointerTableItem = biPointerTableList.get(i);
+            if (biPointerTableItem.deputyid == classId && biPointerTableItem.deputyobjectid == tupleid) {
+                temp.add(biPointerTableItem);
+            }
+        }
+        for (BiPointerTableItem biPointerTableItem : temp) {
+            biPointerTableList.remove(biPointerTableItem); //delete from biPointerTable
+        }
+
         ArrayList<Integer> DeputyIdList = memConnect.getDeputyIdList(classId);
         // System.out.println("Origin: "+classId+"("+tupleid+")");
         if (!DeputyIdList.isEmpty()) {
@@ -79,15 +91,14 @@ public class DeleteImpl implements Delete {
                 // System.out.println("Deputy: "+deputyClassId);
                 //choose all deputy tuple id from biPointerTable
                 List<Integer> deputyTupleIdList = new ArrayList<>(); // 需要删除的元组，递归删除
-                List<BiPointerTableItem> biPointerTableList = MemConnect.getBiPointerTable().biPointerTableList;
-                List<BiPointerTableItem> temp = new ArrayList<>(); // 需要删除的指针
+                biPointerTableList = MemConnect.getBiPointerTable().biPointerTableList;
+                temp = new ArrayList<>(); // 需要删除的指针
                 for (int i = 0; i < biPointerTableList.size();i++){
                     BiPointerTableItem biPointerTableItem = biPointerTableList.get(i);
                     if (biPointerTableItem.classid == classId
                             && biPointerTableItem.objectid == tupleid
                             && biPointerTableItem.deputyid == deputyClassId) {
                         deputyTupleIdList.add(biPointerTableItem.deputyobjectid);//add deputy tuple id
-                        
                     }
                 }
 

@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -31,12 +32,19 @@ import edu.whu.tmdb.query.operations.Update;
 import edu.whu.tmdb.query.operations.utils.MemConnect;
 import edu.whu.tmdb.query.operations.utils.SelectResult;
 
+import edu.whu.tmdb.query.operations.impl.InsertImpl;
+import edu.whu.tmdb.query.operations.impl.DeleteImpl;
+
 public class UpdateImpl implements Update {
 
     private final MemConnect memConnect;
+    private InsertImpl insertImpl;
+    private DeleteImpl deleteImpl;
 
     public UpdateImpl() {
         this.memConnect = MemConnect.getInstance(MemManager.getInstance());
+        insertImpl = new InsertImpl();
+        deleteImpl = new DeleteImpl();
     }
 
     @Override
@@ -70,36 +78,35 @@ public class UpdateImpl implements Update {
         // 3.执行update操作
         int[] indexs = new int[updateSetStmts.size()]; // update中set语句修改的属性->类表中属性的映射关系
         Object[] updateValue = new Object[updateSetStmts.size()];
-        setMapping(selectResult.getAttrname(), updateSetStmts, indexs, updateValue);
+        setMapping(selectResult.getAttrname(), selectResult.getAlias(), updateSetStmts, indexs, updateValue);
         int classId = memConnect.getClassId(updateTableName);
         update(selectResult.getTpl(), indexs, updateValue, classId);
     }
 
     /**
      * update的具体执行过程
-     * 
      * @param tupleList   经筛选得到的tuple list副本（只包含tuple属性）
      * @param indexs      update中set语句修改的属性->类表中属性的映射关系
      * @param updateValue set语句中的第i个对应于源类中第j个属性修改后的值
      * @param classId     修改表的id
-     * @throws IOException
+     * @throws IOException 
      */
-    public void update(TupleList tupleList, int[] indexs, Object[] updateValue, int classId)
-            throws TMDBException, IOException {
-        SelectImpl select=new SelectImpl();
+    public void update(TupleList tupleList, int[] indexs, Object[] updateValue, int classId) throws TMDBException, IOException {
         // 1.更新源类tuple
         ArrayList<Integer> updateIdList = new ArrayList<>();
+        TupleList newTupleList = new TupleList();
         for (Tuple tuple : tupleList.tuplelist) {
             for (int i = 0; i < indexs.length; i++) {
                 tuple.tuple[indexs[i]] = updateValue[i];
             }
+            newTupleList.addTuple(tuple);
             memConnect.UpateTuple(tuple, tuple.getTupleId());
             updateIdList.add(tuple.getTupleId());
         }
 
         // 2.根据biPointerTable找到对应的deputyTuple
         ArrayList<Integer> deputyTupleIdList = new ArrayList<>();
-        TupleList deputyTupleList = new TupleList(); // 所有代理类的元组
+        TupleList deputyTupleList = new TupleList();    // 所有代理类的元组
         for (BiPointerTableItem biPointerTableItem : MemConnect.getBiPointerTableList()) {
             if (updateIdList.contains(biPointerTableItem.objectid)) {
                 deputyTupleIdList.add(biPointerTableItem.deputyobjectid);
@@ -107,14 +114,12 @@ public class UpdateImpl implements Update {
                 deputyTupleList.addTuple(tuple);
             }
         }
+        if (deputyTupleIdList.isEmpty()) { return; }
 
         // 3.获取deputyTupleId->...的哈希映射列表
         List<Integer> collect = Arrays.stream(indexs).boxed().collect(Collectors.toList());
-        HashMap<Integer, ArrayList<Integer>> deputyId2AttrId = new HashMap<>(); // 满足where条件的deputyId ->
-                                                                                // deputyAttrIdList(其实也是index)
-        HashMap<Integer, ArrayList<Object>> deputyId2UpdateValue = new HashMap<>(); // 满足where条件的deputyId
-                                                                                    // ->
-                                                                                    // 更新后的属性值列表(其实也是updateValue)
+        HashMap<Integer, ArrayList<Integer>> deputyId2AttrId = new HashMap<>();         // 满足where条件的deputyId -> deputyAttrIdList(其实也是index)
+        HashMap<Integer, ArrayList<Object>> deputyId2UpdateValue = new HashMap<>();     // 满足where条件的deputyId -> 更新后的属性值列表(其实也是updateValue)
         for (SwitchingTableItem switchingTableItem : MemConnect.getSwitchingTableList()) {
             if (switchingTableItem.oriId == classId && collect.contains(switchingTableItem.oriAttrid)) {
                 if (!deputyId2AttrId.containsKey(switchingTableItem.deputyId)) {
@@ -127,61 +132,75 @@ public class UpdateImpl implements Update {
             }
         }
 
-        // 2.找到所有的代理类，进行递归插入
-        // 2.1 找到源类所有的代理类
+        // 4.递归修改所有代理类
         ArrayList<Integer> DeputyIdList = memConnect.getDeputyIdList(classId);
         String[][] DeputyTypeList = memConnect.getDeputyTypeList(classId);
-        // 2.2 将元组转换为代理类应有的形式并递归插入
-        if (!DeputyIdList.isEmpty()) {
-            for (int i = 0; i < DeputyIdList.size(); i++) {
-                int deputyClassId = DeputyIdList.get(i);
-                String[] deputyRules = DeputyTypeList[i];
-
-                for (String deputyRule : deputyRules) {
-                    if (deputyRule.equals("0")) { // Select Deputy
-                        if (deputyTupleIdList.isEmpty()) {
-                            return;
-                        }
-                        
-                        // 4.递归修改所有代理类
-                        for (int deputyId : deputyId2AttrId.keySet()) { // 遍历所有代理类id
-                            TupleList updateTupleList = new TupleList();
-                            for (Tuple tuple : deputyTupleList.tuplelist) {
-                                if (tuple.classId == deputyId) {
-                                    updateTupleList.addTuple(tuple); // 找到该代理类的所有元组
-                                }
-                            }
-                            int[] nextIndexs = deputyId2AttrId.get(deputyId).stream().mapToInt(Integer -> Integer)
-                                    .toArray();
-                            Object[] nextUpdate = deputyId2UpdateValue.get(deputyId).toArray();
-                            update(updateTupleList, nextIndexs, nextUpdate, deputyId);
-                        }
-                    } // End of Select Deputy
-                    else if (deputyRule.equals("1")) { // Join Deputy
-                        for (int deputyId : DeputyIdList) { // 遍历所有代理类id
-                        String deputyDetailRule = memConnect.getDetailDeputyRule(deputyClassId); // 获取join的详细规则
-                        // 这里需要修改,应该先 join， 然后再插入 join 的结果
-                        List<Integer> anotherClassId = memConnect.getAnotherOriginID(deputyClassId, classId); // join 的结果的其它源类 id
-                        List<Tuple> deputyTupleList2 = getDeputyJoinTupleList(classId, tupleList, anotherClassId, select,deputyDetailRule); // 获取join的结果
-                        
-                        TupleList updateTupleList = new TupleList();
-                        for (Tuple tuple : deputyTupleList2) {
-                            if (tuple.classId == deputyId) {
-                                updateTupleList.addTuple(tuple); // 找到该代理类的所有元组
-                            }
-                        }
-                        
-                        int[] nextIndexs = deputyId2AttrId.get(deputyId).stream().mapToInt(Integer -> Integer)
-                                    .toArray();
-                            Object[] nextUpdate = deputyId2UpdateValue.get(deputyId).toArray();
-                            update(updateTupleList, nextIndexs, nextUpdate, deputyId);
-                        }
-                    } // End of Join Deputy
+        SelectImpl select=new SelectImpl();
+        for (int i = 0; i < DeputyIdList.size(); i++) {
+            int deputyId = DeputyIdList.get(i);
+            String[] deputyRules = DeputyTypeList[i];
+            TupleList updateTupleList = new TupleList();
+            for (Tuple tuple : deputyTupleList.tuplelist) { // 找到该代理类的所有相关元组
+                if (tuple.classId == deputyId) {
+                    updateTupleList.addTuple(tuple);    
                 }
             }
-
+            for (String deputyRule : deputyRules) {
+                if (deputyRule.equals("0")) { // Select Deputy
+                    int[] nextIndexs = deputyId2AttrId.get(deputyId).stream().mapToInt(Integer -> Integer).toArray();
+                    Object[] nextUpdate = deputyId2UpdateValue.get(deputyId).toArray();
+                    update(updateTupleList, nextIndexs, nextUpdate, deputyId);
+                } 
+                else if(deputyRule.equals("1")){ // Join Deputy
+                    for (Tuple tuple : updateTupleList.tuplelist) {
+                        deleteImpl.delete(deputyId, tuple.tupleId);
+                    }
+                    String deputyDetailRule = memConnect.getDetailDeputyRule(deputyId);    // 获取join的详细规则
+                    List<Integer> anotherClassId = memConnect.getAnotherOriginID(deputyId, classId);    // join的结果的其它源类id
+                    SelectResult selectResult = insertImpl.getDeputyJoinSelectResult(classId, newTupleList, anotherClassId, select, deputyDetailRule);    // 获取join的结果
+                    createBiPointerTableItem(selectResult, deputyId);
+                }
+            }
         }
+    }
 
+    private void createBiPointerTableItem(SelectResult selectResult, int deputyId) throws TMDBException, IOException {
+        // 使用MemConnect.getBiPointerTableList().add()插入BiPointerTable
+        // 1. Insert each item in the selectResult
+        TupleList tpl=selectResult.getTpl();
+        InsertImpl insert=new InsertImpl();
+        List<String> columns= Arrays.asList(selectResult.getAttrname());
+
+        for (int i = 0; i < tpl.tuplelist.size(); i++) {
+            Tuple tuple=selectResult.getTpl().tuplelist.get(i);
+            // 使用insert.execute()插入对象
+            try {
+                int deputyTupleId = insert.execute(deputyId, columns, new Tuple(tuple.tuple));
+                // 可调用getOriginClass(selectResult);
+                HashSet<Integer> origin = getOriginClass(selectResult);
+                for (int origin_index :origin) {
+                    int classId=memConnect.getClassId(selectResult.getClassName()[origin_index]);
+                    int oriTupleId=tuple.tupleIds[origin_index];
+                    // System.out.println(deputyId);
+                    // System.out.println(deputyTupleId);
+                    MemConnect.getBiPointerTableList().add(
+                            new BiPointerTableItem(classId,oriTupleId,deputyId,deputyTupleId)
+                    );
+                }
+            } catch (TMDBException e) {
+                ;
+            }
+        }
+    }
+
+    private HashSet<Integer> getOriginClass(SelectResult selectResult) {
+        ArrayList<String> collect = Arrays.stream(selectResult.getClassName()).collect(Collectors.toCollection(ArrayList::new));
+        HashSet<String> collect1 = Arrays.stream(selectResult.getClassName()).collect(Collectors.toCollection(HashSet::new));
+        HashSet<Integer> res = new HashSet<>();
+        for (String s : collect1) {
+            res.add(collect.indexOf(s));
+        }
+        return res;
     }
 
     public List<Tuple> getDeputyJoinTupleList(int thisClassID, TupleList tuplelist, List<Integer> anotherClassId, SelectImpl select,String DeputyDetailRule) throws TMDBException {
@@ -288,12 +307,13 @@ public class UpdateImpl implements Update {
      * @param indexs         赋值：set字段属性->元组属性的位置对应关系
      * @param updateValue    赋值：set字段赋值列表
      */
-    private void setMapping(String[] attrNames, ArrayList<UpdateSet> updateSetStmts, int[] indexs,
+    private void setMapping(String[] attrNames, String[] aliasNames, ArrayList<UpdateSet> updateSetStmts, int[] indexs,
             Object[] updateValue) {
         for (int i = 0; i < updateSetStmts.size(); i++) {
             UpdateSet updateSet = updateSetStmts.get(i);
             for (int j = 0; j < attrNames.length; j++) {
-                if (!updateSet.getColumns().get(0).getColumnName().equals(attrNames[j])) {
+                if (!updateSet.getColumns().get(0).getColumnName().equals(attrNames[j])
+                 && !updateSet.getColumns().get(0).getColumnName().equals(aliasNames[j])) {
                     continue;
                 }
 

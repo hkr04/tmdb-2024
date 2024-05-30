@@ -167,8 +167,8 @@ public class InsertImpl implements Insert {
                 int deputyClassId = DeputyIdList.get(i);
                 String[] deputyRules = DeputyTypeList[i];
 
-                for (String deputyRule: deputyRules){
-                    if (deputyRule.equals("0")) { //Select Deputy
+                for (String deputyRule : deputyRules){
+                    if (deputyRule.equals("0")) { // Select Deputy
                         HashMap<String, String> attrNameHashMap = getAttrNameHashMap(classId, deputyClassId, columns);
                         List<String> deputyColumns = getDeputyColumns(attrNameHashMap, columns);    // 根据源类属性名列表获取代理类属性名列表
                         Tuple deputyTuple = getDeputyTuple(attrNameHashMap, tuple, columns);        // 将插入源类的元组tuple转换为插入代理类的元组deputyTuple
@@ -177,8 +177,7 @@ public class InsertImpl implements Insert {
                         int DeputyTupleId = execute(deputyClassId, deputyColumns, deputyTuple);
                         MemConnect.getBiPointerTableList().add(new BiPointerTableItem(classId, tupleid, deputyClassId, DeputyTupleId));
                     }
-
-                    else if(deputyRule.equals("1")){ //Join Deputy
+                    else if(deputyRule.equals("1")){ // Join Deputy
                         String deputyDetailRule = memConnect.getDetailDeputyRule(deputyClassId);    // 获取join的详细规则
                         List<Integer> anotherClassId = memConnect.getAnotherOriginID(deputyClassId, classId);    // join的结果的其它源类id
                         SelectResult selectResult = getDeputyJoinSelectResult(classId, tuple, anotherClassId, select, deputyDetailRule);    // 获取join的结果
@@ -186,7 +185,6 @@ public class InsertImpl implements Insert {
                     }
                 }
             }
-
         }
         return tupleid;
     }
@@ -222,7 +220,6 @@ public class InsertImpl implements Insert {
             } catch (TMDBException e) {
                 ;
             }
-           
         }
     }
 
@@ -244,6 +241,19 @@ public class InsertImpl implements Insert {
      * @throws TMDBException If no class is found with the given id, throw an exception
      */
     public SelectResult getDeputyJoinSelectResult(int thisClassID, Tuple tuple, List<Integer> anotherClassId, SelectImpl select,String DeputyDetailRule) throws TMDBException {
+        TupleList thisTupleList = new TupleList();
+        thisTupleList.addTuple(tuple);
+        return getDeputyJoinSelectResult(thisClassID, thisTupleList, anotherClassId, select, DeputyDetailRule);
+    }
+
+    /**
+     * Join the given tuple(s) with all tuples of another class
+     * @param thisTupleList The given tuple(s)
+     * @param anotherClassId The id of the other class
+     * @return The list of joined tuples
+     * @throws TMDBException If no class is found with the given id, throw an exception
+     */
+    public SelectResult getDeputyJoinSelectResult(int thisClassID, TupleList thisTupleList, List<Integer> anotherClassId, SelectImpl select,String DeputyDetailRule) throws TMDBException {
         //获取其它类的所有Tuple->SelectResult
         List<ObjectTableItem> objs= MemConnect.getObjectTableList();
         HashMap<Integer, TupleList> anotherTuple = new HashMap<>();
@@ -262,8 +272,6 @@ public class InsertImpl implements Insert {
             right.add(getSelectResultInformation(anotherClassId.get(i), classTableItems, anotherTupleList));
         }
         //构建本类的SelectResult
-        TupleList thisTupleList = new TupleList();
-        thisTupleList.addTuple(tuple);
         SelectResult left =  getSelectResultInformation(thisClassID, classTableItems, thisTupleList);
         SelectImpl selectImpl = new SelectImpl();
         try {

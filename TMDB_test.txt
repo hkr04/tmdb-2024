@@ -80,7 +80,7 @@ CREATE SELECTDEPUTY deputyTest1 AS (SELECT id as uid,value1 as v1,value2 as v2 F
 select * from deputy;
 
 Expected output:
-|deputy.id_1         |deputy.value_1      |
+|deputy.deid         |deputy.dev1         |
 |1                   |10                  |
 |2                   |20                  |
 |3                   |30                  |
@@ -92,19 +92,21 @@ Expected output:
 select * from deputyTest1;
 
 Expected output:
-|deputyTest1.id      |deputyTest1.value1  |deputyTest1.value2  |
+|deputyTest1.uid     |deputyTest1.v1      |deputyTest1.v2      |
 |1                   |10                  |11                  |
 |2                   |20                  |21                  |
 |3                   |30                  |31                  |
 |4                   |40                  |41                  |
 |5                   |50                  |51                  |
 
+
 #############################################################################################
 
 #测试点3，show table功能实现;[show classtable BUG已修复]
 # show table
 
-show ClassTable		// show 展示类表,存储源类和代理类的定义及其属性的定义
+show ClassTable		
+// show 展示类表,存储源类和代理类的定义及其属性的定义
 
 Expected output:
 | class name           | class id | attribute name       | attribute id | attribute type |
@@ -121,14 +123,16 @@ Expected output:
 | deputyTest1          | 5        | v1                   | 1            | int            |
 | deputyTest1          | 5        | v2                   | 2            | int            |
      
-show DeputyTable		// show 展示存储源类和代理类之间的代理关系
+show DeputyTable		
+// show 展示存储源类和代理类之间的代理关系
 
 Expected output:
 | origin class id      | deputy class id      |
-| 3                    | 4                    |
-| 1                    | 5                    |
+| 1                    | 4                    |
+| 3                    | 5                    |
 
-show SwitchingTable		// show 展示源类和代理类之间指明属性的双向指针列表
+show SwitchingTable		
+// show 展示源类和代理类之间指明属性的双向指针列表
 
 Expected output:
 | origin class id      | origin attribute id | origin attribute name | deputy class id | deputy attribute id | deputy attribute name |
@@ -138,22 +142,23 @@ Expected output:
 | 3                    | 1                   | value1                | 5               | 1                   | v1                    |
 | 3                    | 2                   | value2                | 5               | 2                   | v2                    |
     
-show BiPointerTable		// show 展示源类和代理类之间指明对象的双向指针列表
+show BiPointerTable		
+// show 展示源类和代理类之间指明对象的双向指针列表
 
 Expected output:
 | class id             | object id      | deputy id    | deputy object id |
-| 1                    | 0              | 4            | 17               |
-| 1                    | 1              | 4            | 18               |
-| 1                    | 2              | 4            | 19               |
-| 1                    | 3              | 4            | 20               |
-| 1                    | 4              | 4            | 21               |
-| 1                    | 5              | 4            | 22               |
+| 1                    | 0              | 4            | 18               |
+| 1                    | 1              | 4            | 19               |
+| 1                    | 2              | 4            | 20               |
+| 1                    | 3              | 4            | 21               |
+| 1                    | 4              | 4            | 22               |
 | 1                    | 6              | 4            | 23               |
-| 3                    | 12             | 5            | 24               |
+| 1                    | 7              | 4            | 24               |
 | 3                    | 13             | 5            | 25               |
 | 3                    | 14             | 5            | 26               |
 | 3                    | 15             | 5            | 27               |
 | 3                    | 16             | 5            | 28               |
+| 3                    | 17             | 5            | 29               |
 
 
 #############################################################################################
@@ -164,17 +169,17 @@ CREATE SELECTDEPUTY deputyTest2 AS (SELECT id*2 as double_uid,value1*2 as double
 select * from deputyTest2;
 
 Expected output:
-|deputyTest2.id * 2  |deputyTest2.value1 * 2|deputyTest2.value2 * 2|
-|2.0                 |20.0                |22.0                |
-|4.0                 |40.0                |42.0                |
-|6.0                 |60.0                |62.0                |
-|8.0                 |80.0                |82.0                |
-|10.0                |100.0               |102.0               |
+|deputyTest2.double_uid|deputyTest2.double_v1|deputyTest2.double_v2|
+|2.0                   |20.0                 |22.0                 |
+|4.0                   |40.0                 |42.0                 |
+|6.0                   |60.0                 |62.0                 |
+|8.0                   |80.0                 |82.0                 |
+|10.0                  |100.0                |102.0                |
 
 select * from deputyTest1;
 
 Expected output:
-|deputyTest1.id      |deputyTest1.value1  |deputyTest1.value2  |
+|deputyTest1.uid     |deputyTest1.v1      |deputyTest1.v2      |
 |1                   |10                  |11                  |
 |2                   |20                  |21                  |
 |3                   |30                  |31                  |
@@ -219,10 +224,10 @@ table1 ——>deputy;
 table3 ——>deputyTest1;
 table3 ——>deputyTest2;
 
-show ClassTable;
+show ClassTable
 
 Expected output:
-[An empty line because all classtables have been removed recursively.]
+| class name           | class id | attribute name       | attribute id | attribute type |
 
 #############################################################################################
 
@@ -316,7 +321,8 @@ Expected output:
 |5199                |"iPhone 15"         |
 |7399                |"iPhone 15 Pro"     |
 
-show ClassTable		// show 展示类表
+show ClassTable		
+// show 展示类表
 
 Expected output:
 | class name           | class id | attribute name       | attribute id | attribute type |
@@ -332,7 +338,8 @@ Expected output:
 | iphone               | 11       | price                | 0            | int            |
 | iphone               | 11       | type                 | 1            | String         |
 
-show DeputyTable		// show 展示源类和代理类的关系表
+show DeputyTable		
+// show 展示源类和代理类的关系表
 
 Expected output:
 | origin class id      | deputy class id      |
@@ -340,7 +347,8 @@ Expected output:
 | 7                    | 10                   |
 | 7                    | 11                   |
 
-show SwitchingTable		// show 展示源类和代理类之间指明属性的双向指针列表
+show SwitchingTable		
+// show 展示源类和代理类之间指明属性的双向指针列表
 
 Expected output:
 | origin class id      | origin attribute id | origin attribute name | deputy class id | deputy attribute id | deputy attribute name |
@@ -786,9 +794,9 @@ CREATE JOINDEPUTY assistant as (select classname, teacher.name as teacher, stude
 select * from assistant;
 
 Expected output:
-|assistant.classname |assistant.teacher.name|assistant.student.name|
-|database2           |LiSi                 |b                   |
-|database1           |ZhangSan             |a                   |
+|assistant.classname |assistant.teacher   |assistant.student   |
+|database2           |LiSi                |b                   |
+|database1           |ZhangSan            |a                   |
 
 
 INSERT INTO student VALUES (gg, 2007);					// 新增了一名同学作为课程2007的助教；
@@ -797,99 +805,73 @@ INSERT INTO course VALUES (database4,5,2004);			//新增了一门2004的数据�
 select * from assistant;
 
 Expected output:
-|assistant.classname |assistant.teacher.name|assistant.student.name|
-|database2           |LiSi                  |b                     |
-|database1           |ZhangSan              |a                     |
-|database7           |WangWu                |gg                    |
-|database4           |WangWu                |d                     |
+|assistant.classname |assistant.teacher   |assistant.student   |
+|database2           |LiSi                |b                   |
+|database1           |ZhangSan            |a                   |
+|database7           |WangWu              |gg                  |
+|database4           |WangWu              |d                   |
 
 delete from teacher where teacherid=5; // WangWu - 5
 
 select * from assistant;
 
 Expected output:
-|assistant.classname |assistant.teacher.name|assistant.student.name|
-|database2           |LiSi                  |b                   |
-|database1           |ZhangSan              |a                   |
+|assistant.classname |assistant.teacher   |assistant.student   |
+|database2           |LiSi                |b                   |
+|database1           |ZhangSan            |a                   |
+
+#测试点11：[在delete中进行更新迁移]
 
 delete from teacher where name='LiSi';
 
 select * from assistant;
 
 Expected output:
+|assistant.classname |assistant.teacher   |assistant.student   |
+|database1           |ZhangSan            |a                   |
+
+
+#测试点12：[在update中进行更新迁移]
+CREATE SELECTDEPUTY tmp as (select * from assistant);
+
+UPDATE teacher SET name = ZhangSi where name = 'ZhangSan';
+
+select * from teacher;
+
+Expected output:
+|teacher.name        |teacher.teacherid   |
+|ZhangSi             |1                   |
+
+select * from assistant;
+
+Expected output:
 |assistant.classname |assistant.teacher.name|assistant.student.name|
-|database1           |ZhangSan              |a                     |
+|database1           |ZhangSi             |a                   |
 
-
-#测试点11：[在update中进行更新迁移]
-CREATE SELECTDEPUTY studentes as (select name as newname,studentid as newid from student);
-
-select * from student;
+select * from tmp;
 
 Expected output:
-|student.name        |student.studentid   |
-|a                   |2001                |
-|b                   |2002                |
-|c                   |2003                |
-|d                   |2004                |
-|e                   |2005                |
-|gg                  |2006                |
+|tmp.classname       |tmp.teacher.name    |tmp.student.name    |
+|database1           |ZhangSi             |a                   |
 
-select * from studentes;
+// 只修改代理类检查源类和其他代理类会不会被修改；
+UPDATE assistant SET teacher = ZhangWu WHERE teacher = 'ZhangSi';
+
+select * from assistant;
 
 Expected output:
-|studentes.name      |studentes.studentid |
-|a                   |2001                |
-|b                   |2002                |
-|c                   |2003                |
-|d                   |2004                |
-|e                   |2005                |
-|gg                  |2006                |
+|assistant.classname |assistant.teacher   |assistant.student   |
+|database1           |ZhangWu             |a                   |
 
-select * from courseandstudent;
+select * from tmp;
 
 Expected output:
-|courseandstudent.name|courseandstudent.classname|courseandstudent.teacher|
-|a                   |database1           |aa                  |
-|b                   |database2           |bb                  |
-|c                   |database3           |cc                  |
-|gg                  |database6           |dd                  |
-|d                   |database4           |ff                  |
+|tmp.classname       |tmp.teacher         |tmp.student         |
+|database1           |ZhangWu             |a                   |
 
-#只修改代理类检查源类和其他代理类会不会被修改；
-UPDATE studentes SET studentid = 2007 WHERE studentid = 2001;
-
-select * from studentes;
+select * from teacher;
 
 Expected output:
-|studentes.name      |studentes.studentid |
-|a                   |2007                |
-|b                   |2002                |
-|c                   |2003                |
-|d                   |2004                |
-|e                   |2005                |
-|gg                  |2006                |
-
-select * from student;
-
-Expected output:
-|student.name        |student.studentid   |
-|a                   |2001                |
-|b                   |2002                |
-|c                   |2003                |
-|d                   |2004                |
-|e                   |2005                |
-|gg                  |2006                |
-
-select * from courseandstudent;
-
-Expected output:
-|courseandstudent.name|courseandstudent.classname|courseandstudent.teacher|
-|a                   |database1           |aa                  |
-|b                   |database2           |bb                  |
-|c                   |database3           |cc                  |
-|gg                  |database6           |dd                  |
-|d                   |database4           |ff                  |
-
-UPDATE student SET studentid = 2006 WHERE studentid = 2001;
+|teacher.name        |teacher.teacherid   |
+|ZhangSi             |1                   |
 

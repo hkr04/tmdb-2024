@@ -124,7 +124,7 @@ public class MemConnect {
             }
         }
         // 如果遍历完成后没有找到匹配的表名，抛出(-1): tjoin deputy class 需要的，而非直接报错
-        //throw new TMDBException(ErrorList.CLASS_NAME_DOES_NOT_EXIST, "No class found with the name: " + tableName);
+        // throw new TMDBException(ErrorList.CLASS_NAME_DOES_NOT_EXIST, "No class found with the name: " + tableName);
         return -1;
     }
 
@@ -299,8 +299,10 @@ public class MemConnect {
             if (item.classname.equals(((Table)fromItem).getName())){
                 // 硬拷贝，不然后续操作会影响原始信息
                 ClassTableItem classTableItem = item.getCopy();
-                if (fromItem.getAlias() != null) {
-                    classTableItem.alias = fromItem.getAlias().getName();
+                if (item.alias != null && !item.alias.isEmpty()) {
+                    classTableItem.alias = item.alias;
+                } else {
+                    classTableItem.alias = item.attrname;
                 }
                 classTableList.add(classTableItem);
             }
@@ -350,8 +352,9 @@ public class MemConnect {
     public boolean columnExist(String tableName, String columnName) throws TMDBException {
         List<ClassTableItem> classTableItems = getClassTableList(); // 获取所有类信息的列表
         for (ClassTableItem item : classTableItems) {
-            if (item.classname.equals(tableName)&&item.attrname.equals(columnName)) {
-                return true; // 如果找到匹配的类名，返回true
+            if (item.classname.equals(tableName)) {
+                if (item.attrname.equals(columnName) || item.alias != null && item.alias.equals(columnName))
+                    return true; // 如果找到匹配的类名，返回true
             }
         }
         return false; // 如果遍历完列表后没有找到，返回false

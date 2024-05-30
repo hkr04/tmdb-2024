@@ -181,8 +181,9 @@ public class SelectImpl implements edu.whu.tmdb.query.operations.Select {
                 for (int j = 0; j < selectResult.getClassName().length; j++) {
                     if (column.getTable() != null) {
                         if ((selectResult.getClassName()[j].equals(column.getTable().getName())
-                                || selectResult.getAlias()[j].equals(column.getTable().getName()))
-                                && selectResult.getAttrname()[j].equals(column.getColumnName())) {
+                            && 
+                                (selectResult.getAttrname()[j].equals(column.getColumnName()) 
+                              || selectResult.getAlias()[j].equals(column.getTable().getName())))) {
                             tempI = j;
                             break;
                         }
@@ -325,7 +326,8 @@ public class SelectImpl implements edu.whu.tmdb.query.operations.Select {
      * @return project结果，即select语句最终结果
      */
     private SelectResult projectAllColums(SelectResult entireResult) {
-        entireResult.setAlias(entireResult.getAttrname());
+        if (entireResult.getAlias() == null)
+            entireResult.setAlias(entireResult.getAttrname());
         // 要对attrid重拍以下，不然最终printResult的时候会有问题
         for (int j = 0; j < entireResult.getAttrid().length; j++) {
             entireResult.getAttrid()[j] = j;
@@ -349,7 +351,7 @@ public class SelectImpl implements edu.whu.tmdb.query.operations.Select {
         String attrName = selectItem.getExpression().toString();
         // 2.alias赋值,前提
         String alias;
-        if (selectItem.getAlias() != null) {
+        if (selectItem.getAlias() != null && selectItem.getAlias().getName() != "") {
             alias = selectItem.getAlias().getName();
         } else {
             alias = attrName;
@@ -407,7 +409,7 @@ public class SelectImpl implements edu.whu.tmdb.query.operations.Select {
             if (className.equals(table.getName())
                     || table.getAlias() != null && table.getAlias().getName().equals(alias)) {
                 projectResult.getAttrname()[indexInResult] = entireResult.getAttrname()[i];
-                projectResult.getAlias()[indexInResult] = entireResult.getAttrname()[i];
+                projectResult.getAlias()[indexInResult] = entireResult.getAlias()[i];
                 projectResult.getType()[indexInResult] = entireResult.getType()[i];
                 projectResult.getAttrid()[indexInResult] = indexInResult;
                 for (int j = 0; j < resTupleList.tuplelist.size(); j++) {
@@ -682,7 +684,8 @@ public class SelectImpl implements edu.whu.tmdb.query.operations.Select {
                 int leftIndex = -1;
                 int rightIndex = -1;
                 for (int i = 0; i < left.getAttrname().length; i++) {
-                    if (leftExpression.getColumnName().equals(left.getAttrname()[i])) {
+                    if (leftExpression.getColumnName().equals(left.getAttrname()[i])
+                     || leftExpression.getColumnName().equals(left.getAlias()[i])) {
                         leftIndex = i;
                         break;
                     }
@@ -690,7 +693,8 @@ public class SelectImpl implements edu.whu.tmdb.query.operations.Select {
                 if (leftIndex == -1)
                     throw new TMDBException(ErrorList.COLUMN_NAME_DOES_NOT_EXIST, leftExpression.getColumnName());
                 for (int i = 0; i < right.getAttrname().length; i++) {
-                    if (rightExpression.getColumnName().equals(right.getAttrname()[i])) {
+                    if (rightExpression.getColumnName().equals(right.getAttrname()[i])
+                     || rightExpression.getColumnName().equals(right.getAlias()[i])){
                         rightIndex = i;
                         break;
                     }
